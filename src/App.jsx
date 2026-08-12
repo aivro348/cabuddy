@@ -2,10 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './index.css';
 
 
-// Dynamic API URL: Automatically uses '/api' on cPanel production and 'http://localhost:5001/api' in local Vite dev
-const API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (window.location.port === '5173' || window.location.port === '5174'))
-  ? 'http://localhost:5001/api'
-  : '/api';
+// API Base URL (Vite proxy maps this to 5001 locally, cPanel serves it directly)
+const API_BASE = '/api';
 
 // ── The 8 Official Units from Field Requirement ──
 const ORGANIZATIONAL_UNITS = [
