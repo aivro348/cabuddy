@@ -94,3 +94,12 @@ VALUES
 ('usr-1', 'Executive Super Admin', 'admin@eluc', 'admin', 'SUPER_ADMIN', 'Super Administrator', 'FCA108920', '+91 98480 12345', 'All Enterprise Units', 'Central Audit Apex Office', '01-Jan-2024', NULL),
 ('usr-2', 'Suresh N., Audit Manager', 'manager@eluc', '1234567', 'MANAGER', 'Department Audit Manager', 'ACA219842', '+91 94401 54321', 'Auctions', 'Auctions Admin Wing & Counter #1', '15-Mar-2024', 'usr-1'),
 ('usr-3', 'Ravi Teja, Field Auditor', 'auditor@eluc', '1234567', 'USER', 'Field Auditor', 'SRO0682194', '+91 91234 56780', 'Procurement [Marketing Department]', 'Marketing Procurement Cell & Tenders Desk', '10-Aug-2025', 'usr-2');
+
+-- 6. High-Performance Concurrency Indexes for 10,000+ Users Scaling
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_managedby ON users(managedBy);
+CREATE INDEX IF NOT EXISTS idx_attendance_user ON attendance(userId, date);
+CREATE INDEX IF NOT EXISTS idx_reports_regno ON daily_reports(studentRegNo);
+CREATE INDEX IF NOT EXISTS idx_reports_unit ON daily_reports(unitDetails);
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assignedTo);
+CREATE INDEX IF NOT EXISTS idx_moms_date ON moms(date);

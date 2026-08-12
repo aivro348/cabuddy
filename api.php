@@ -43,6 +43,7 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_PERSISTENT => true, // Re-use SQL connections for high traffic scaling
     ]);
 } catch (PDOException $e) {
     echo json_encode([
@@ -93,28 +94,9 @@ try {
         }
 
         if (!$user) {
-            // Auto provision user
-            $newId = 'usr-' . round(microtime(true) * 1000);
-            $emailFormatted = strpos($email, '@') !== false ? $email : "$email@eluc";
-            $displayName = ucwords(str_replace(['.', '_'], ' ', explode('@', $email)[0]));
-            
-            $user = [
-                'id' => $newId,
-                'name' => $displayName ?: 'Field Auditor',
-                'email' => $emailFormatted,
-                'password' => $password ?: '1234567',
-                'role' => 'USER',
-                'roleTitle' => 'Field Auditor',
-                'studentRegNo' => 'SRO0' . rand(100000, 999999),
-                'phone' => '+91 98480 ' . rand(10000, 99999),
-                'unit' => 'Auctions',
-                'subUnit' => 'General Audit Desk #1',
-                'joinedDate' => $timeData['dateStr'],
-                'managedBy' => 'usr-2'
-            ];
-
-            $ins = $pdo->prepare("INSERT INTO users (id, name, email, password, role, roleTitle, studentRegNo, phone, unit, subUnit, joinedDate, managedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $ins->execute([$user['id'], $user['name'], $user['email'], $user['password'], $user['role'], $user['roleTitle'], $user['studentRegNo'], $user['phone'], $user['unit'], $user['subUnit'], $user['joinedDate'], $user['managedBy']]);
+            http_response_code(401);
+            echo json_encode(["success" => false, "message" => "User account not found. Please contact the Super Admin to provision your credentials."]);
+            exit();
         }
 
         if ($user['password'] !== $password) {
@@ -176,9 +158,39 @@ try {
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
 
-        // Update daily report status
+        // Update active daily reports to completed
         $stmt = $pdo->prepare("UPDATE daily_reports SET status = 'COMPLETED & VERIFIED' WHERE studentRegNo = ? AND status = 'SUBMITTED'");
         $stmt->execute([$user ? $user['studentRegNo'] : '']);
+
+        // Insert Shift Conclude Handover questionnaire as a final report entry
+        $logoutUnits = is_array($input['logoutUnitsAttended'] ?? null) ? implode(', ', $input['logoutUnitsAttended']) : ($input['logoutUnitsAttended'] ?? '');
+        $logoutSubUnit = $input['logoutSubUnit'] ?? '';
+        $logoutWorkType = $input['logoutWorkType'] ?? '';
+        $logoutObjectiveCompleted = $input['logoutObjectiveCompleted'] ?? '';
+        $logoutEscalations = $input['logoutEscalations'] ?? '';
+        $logoutNotes = $input['logoutNotes'] ?? '';
+
+        if ($user) {
+            $newReportId = 'rep-' . round(microtime(true) * 1000);
+            $insReport = $pdo->prepare("INSERT INTO daily_reports (id, fullName, studentRegNo, unitDetails, studentPhone, dutyAssignedDate, dutyTimePeriod, reportVerificationTime, auditWorkType, workObjective, vouchersVerified, caRemarks, status, createdAt, studentEmail) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $insReport->execute([
+                $newReportId,
+                $user['name'],
+                $user['studentRegNo'],
+                $logoutUnits ?: $user['unit'],
+                $user['phone'] ?: '',
+                $timeData['dateStr'],
+                $timeData['timeStr'],
+                $timeData['timeStr'],
+                $logoutWorkType ?: 'Monthly Internal Audit',
+                "Sub-Unit: " . $logoutSubUnit . "\nProgress: " . $logoutObjectiveCompleted . "\nDescription: " . $logoutNotes,
+                '0',
+                "Escalations: " . $logoutEscalations . " | Handover: " . $logoutRemarks,
+                'COMPLETED & VERIFIED',
+                $timeData['isoStr'],
+                $user['email']
+            ]);
+        }
 
         // Update attendance active session
         $stmt = $pdo->prepare("UPDATE attendance SET active = 0, logoutTime = ?, timeWindow = CONCAT(loginTime, ' - ', ?), duration = 'Session Completed', serverLogoutIso = ?, managerRemarks = ?, logoutLocation = ? WHERE userId = ? AND active = 1");
@@ -240,6 +252,41 @@ try {
                 "users" => $users
             ]);
             exit();
+        }
+        elseif ($method === 'PUT') {
+            $id = trim($input['id'] ?? '');
+            $name = trim($input['name'] ?? '');
+            $email = trim($input['email'] ?? '');
+            $password = $input['password'] ?? '';
+            $roleTitle = $input['roleTitle'] ?? '';
+            $unit = $input['unit'] ?? '';
+            
+            if ($id) {
+                if ($password) {
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, password = ?, roleTitle = ?, unit = ? WHERE id = ?");
+                    $stmt->execute([$name, strtolower($email), $password, $roleTitle, $unit, $id]);
+                } else {
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, roleTitle = ?, unit = ? WHERE id = ?");
+                    $stmt->execute([$name, strtolower($email), $roleTitle, $unit, $id]);
+                }
+                
+                $stmt = $pdo->query("SELECT * FROM users ORDER BY id DESC");
+                $users = $stmt->fetchAll();
+                echo json_encode(["success" => true, "users" => $users]);
+                exit();
+            }
+        }
+        elseif ($method === 'DELETE') {
+            $id = trim($_GET['userId'] ?? $input['userId'] ?? '');
+            if ($id) {
+                $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                $stmt->execute([$id]);
+                
+                $stmt = $pdo->query("SELECT * FROM users ORDER BY id DESC");
+                $users = $stmt->fetchAll();
+                echo json_encode(["success" => true, "users" => $users]);
+                exit();
+            }
         }
     }
 

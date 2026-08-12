@@ -1,6 +1,16 @@
 {
   "users": [
     {
+      "id": "usr-1786567310949",
+      "name": "charan",
+      "email": "22f41a0424@kec.ac.in",
+      "password": "1234567",
+      "role": "USER",
+      "roleTitle": "Lead Auditor",
+      "unit": "Procurement [Marketing Department]",
+      "managedBy": "usr-1"
+    },
+    {
       "id": "usr-1",
       "name": "Executive Super Admin",
       "email": "admin@eluc",
@@ -177,6 +187,52 @@
   ],
   "attendance": [
     {
+      "id": "log-1786567360819",
+      "userId": "usr-1786567310949",
+      "userName": "charan",
+      "userEmail": "22f41a0424@kec.ac.in",
+      "managerId": "usr-1",
+      "roleTitle": "Lead Auditor",
+      "unit": "Procurement [Marketing Department]",
+      "loginTime": "02:12:40 AM",
+      "logoutTime": null,
+      "date": "13 Aug 2026",
+      "timeWindow": "02:12:40 AM - Active",
+      "duration": "Session Active",
+      "active": true,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T20:42:40.815Z",
+      "managerRemarks": "Lead Auditor active in portal.",
+      "loginLocation": {
+        "latitude": 13.631588645395189,
+        "longitude": 79.47372200212524,
+        "accuracy": 114.3071576846631
+      }
+    },
+    {
+      "id": "log-1786567259335",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "02:10:59 AM",
+      "logoutTime": null,
+      "date": "13 Aug 2026",
+      "timeWindow": "02:10:59 AM - Active",
+      "duration": "Session Active",
+      "active": true,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T20:40:59.050Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631845564698482,
+        "longitude": 79.47418327592983,
+        "accuracy": 75
+      }
+    },
+    {
       "id": "log-1786566783988",
       "userId": "usr-1",
       "userName": "Executive Super Admin",
@@ -185,11 +241,11 @@
       "roleTitle": "Super Administrator",
       "unit": "All Enterprise Units",
       "loginTime": "02:03:03 AM",
-      "logoutTime": null,
+      "logoutTime": "02:10:59 AM",
       "date": "13 Aug 2026",
       "timeWindow": "02:03:03 AM - Active",
-      "duration": "Session Active",
-      "active": true,
+      "duration": "Auto closed on new login",
+      "active": false,
       "serverVerified": true,
       "serverUtcIso": "2026-08-12T20:33:03.983Z",
       "managerRemarks": "Super Administrator active in portal.",
@@ -2294,6 +2350,23 @@
     }
   ],
   "dailyReports": [
+    {
+      "id": "dr-1786567395932",
+      "userId": "usr-1786567310949",
+      "loginTime": "02:12:40 AM",
+      "fullName": "charan",
+      "studentRegNo": "SRO304819",
+      "unitDetails": "Procurement [Marketing Department]",
+      "studentPhone": "",
+      "dutyAssignedDate": "13 Aug 2026",
+      "auditWorkType": "Half-Yearly Internal Audit",
+      "workObjective": "sefwe",
+      "vouchersVerified": "43",
+      "caRemarks": "feff",
+      "status": "SUBMITTED",
+      "date": "13 Aug 2026",
+      "createdAt": "2026-08-12T20:43:15.932Z"
+    },
     {
       "id": "dr-1786566777588",
       "userId": "usr-1",

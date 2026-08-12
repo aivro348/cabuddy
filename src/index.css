@@ -242,30 +242,29 @@ body {
     grid-template-columns: 1fr;
   }
   .webapp-navbar-inner {
-    padding: 0.75rem 1rem;
-    flex-direction: column;
+    padding: 0.5rem 1rem;
+    flex-direction: row;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
   .webapp-brand-left {
-    justify-content: center;
-    width: 100%;
+    justify-content: flex-start;
+    width: auto;
   }
   .webapp-nav-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    width: auto;
   }
   .nav-aux-group,
   .nav-user-auth-group {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    justify-content: center;
-    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
   }
   .live-clock-pill,
   .btn-pwa-install,
@@ -3348,12 +3347,12 @@ body {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 500px) {
   .brand-name-group .brand-title {
     font-size: 1rem !important;
   }
   .brand-name-group .brand-sub {
-    font-size: 0.6rem !important;
+    display: none !important;
   }
   .brand-emblem-mini {
     width: 36px !important;

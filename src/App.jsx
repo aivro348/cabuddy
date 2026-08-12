@@ -9,12 +9,12 @@ const API_BASE = '/api';
 const ORGANIZATIONAL_UNITS = [
   'Procurement [Marketing Department]',
   'Warehousing [Marketing Department]',
-  'Donor cell along with Concurrent audit on donation of all allied trusts and Srivani Trust Receipts [Tirumali]',
-  'Kalyanakatta',
+  'Donor cell along with Concurrent audit on donation of all allied trusts and Srivani Trust Receipts [Tirumala]',
+  'Kalyanakatta & Kalyanavedika [Tirumala]',
   'Annaprasadam Trust and Canteens TML & TPT',
   'Sri Padmavathi Ammavari Temple, Tiruchanoor (Sri PAT)',
-  'Reception, TML including Marriage halls',
-  'Auctions'
+  'Reception,TML including Marriage halls',
+  'Auctions [Marketing Department]'
 ];
 
 // Available Auditor Staff Roles (Manager Decides)
@@ -56,6 +56,7 @@ export default function App() {
   const [dutyPocName, setDutyPocName] = useState('');
   const [dutySubmittedReports, setDutySubmittedReports] = useState([]);
   const [dutySubmitSuccess, setDutySubmitSuccess] = useState(false);
+  const [dutySubmitStatus, setDutySubmitStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [dutyVouchersVerified, setDutyVouchersVerified] = useState('');
   const [dutyActiveTab, setDutyActiveTab] = useState('sheet'); // 'sheet', 'records', 'all_users', 'all_reports', 'all_attendance', 'moms', 'tasks'
   const [adminActiveTab, setAdminActiveTab] = useState('dashboard');
@@ -117,6 +118,12 @@ export default function App() {
   // Live Server Clock
   const [currentTimeStr, setCurrentTimeStr] = useState('10:45 AM');
   const [logoutRemarks, setLogoutRemarks] = useState('');
+  const [logoutUnitsAttended, setLogoutUnitsAttended] = useState([]);
+  const [logoutSubUnit, setLogoutSubUnit] = useState('');
+  const [logoutWorkType, setLogoutWorkType] = useState('Monthly Internal Audit');
+  const [logoutObjectiveCompleted, setLogoutObjectiveCompleted] = useState('');
+  const [logoutEscalations, setLogoutEscalations] = useState('');
+  const [logoutNotes, setLogoutNotes] = useState('');
 
 
 
@@ -144,6 +151,12 @@ export default function App() {
   const [newUserPassword, setNewUserPassword] = useState('1234567');
   const [newUserRoleTitle, setNewUserRoleTitle] = useState('Field Auditor');
   const [newUserUnit, setNewUserUnit] = useState(ORGANIZATIONAL_UNITS[0]);
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [editUserName, setEditUserName] = useState('');
+  const [editUserEmail, setEditUserEmail] = useState('');
+  const [editUserPassword, setEditUserPassword] = useState('');
+  const [editUserRoleTitle, setEditUserRoleTitle] = useState('');
+  const [editUserUnit, setEditUserUnit] = useState('');
 
   // Forgot Password Modal
 
@@ -434,6 +447,12 @@ export default function App() {
           body: JSON.stringify({ 
             userId: currentUser.id,
             logoutRemarks: logoutRemarks.trim(),
+            logoutUnitsAttended,
+            logoutSubUnit,
+            logoutWorkType,
+            logoutObjectiveCompleted,
+            logoutEscalations,
+            logoutNotes,
             location
           })
         });
@@ -503,6 +522,8 @@ export default function App() {
       status: shouldLogout ? 'COMPLETED & LOGGED OUT' : 'SUBMITTED'
     };
 
+    setDutySubmitStatus('loading');
+
     try {
       const res = await fetch(`${API_BASE}/daily-reports`, {
         method: 'POST',
@@ -512,24 +533,26 @@ export default function App() {
       const data = await res.json();
       if (data.success && data.reports) {
         setDutySubmittedReports(data.reports);
+        setDutySubmitStatus('success');
+        setDutySubmitSuccess(true);
+        if (shouldLogout) {
+          setTimeout(() => {
+            handleLogout();
+          }, 1500);
+        }
       } else {
-        setDutySubmittedReports(prev => [payload, ...prev]);
+        setDutySubmitStatus('error');
       }
     } catch (err) {
       console.warn('Save daily report local fallback:', err);
       setDutySubmittedReports(prev => [payload, ...prev]);
-    }
-
-    setDutySubmitSuccess(true);
-
-    if (shouldLogout) {
-      setTimeout(() => {
-        handleLogout();
-      }, 1200);
-    } else {
-      setTimeout(() => {
-        setDutySubmitSuccess(false);
-      }, 3500);
+      setDutySubmitStatus('success');
+      setDutySubmitSuccess(true);
+      if (shouldLogout) {
+        setTimeout(() => {
+          handleLogout();
+        }, 1500);
+      }
     }
   };
 
@@ -746,6 +769,54 @@ export default function App() {
     }
   };
 
+  // Update Existing User
+  const handleUpdateUser = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedUserDetailModal) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/users`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedUserDetailModal.id,
+          name: editUserName.trim(),
+          email: editUserEmail.trim().toLowerCase(),
+          password: editUserPassword || undefined,
+          roleTitle: editUserRoleTitle,
+          unit: editUserUnit
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsEditingUser(false);
+        setSelectedUserDetailModal(null);
+        refreshAllData();
+      }
+    } catch (err) {
+      console.error('User update error:', err);
+    }
+  };
+
+  // Delete Existing User
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you absolutely sure you want to delete this user? All their associated logs will remain archived in DB.')) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/users?userId=${userId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSelectedUserDetailModal(null);
+        setIsEditingUser(false);
+        refreshAllData();
+      }
+    } catch (err) {
+      console.error('User delete error:', err);
+    }
+  };
+
   return (
     <div className="webapp-shell">
 
@@ -754,7 +825,7 @@ export default function App() {
       <header className="webapp-navbar">
         <div className="webapp-navbar-inner">
           <div className="webapp-brand-left">
-            <div className="brand-emblem-mini">
+            <div className="brand-emblem-mini" style={{ background: 'transparent', border: 'none', boxShadow: 'none', width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="/calogo.png" alt="CA Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div className="brand-name-group">
@@ -1626,174 +1697,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Success Alert Banner */}
-                {dutySubmitSuccess && (
-                  <div className="duty-success-alert">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <span style={{ fontSize: '1.25rem' }}>✅</span>
-                      <div>
-                        <strong style={{ fontSize: '0.875rem' }}>Daily Duty Entry Submitted Successfully!</strong>
-                        <p style={{ fontSize: '0.75rem', margin: 0 }}>Recorded on central server with auto-captured timestamp.</p>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.725rem', fontWeight: '800', background: '#FFFFFF', padding: '0.25rem 0.6rem', borderRadius: '6px' }}>
-                      ⏱️ {currentTimeStr}
-                    </span>
-                  </div>
-                )}
-
-                {/* 10 Parameters Duty Entry Form */}
-                <form onSubmit={(e) => { e.preventDefault(); handleSaveDutyReport(false); }}>
-                  <div className="duty-form-grid">
-                    
-                    {/* Parameter 1: Login Time (Server Auto-Captured) */}
-                    <div className="duty-field-wrapper">
-                      <label className="duty-field-label">
-                        <span>⏱️ 1. Login Time (Server Auto-Captured)</span>
-                        <span className="req">*</span>
-                      </label>
-                      <div className="duty-auto-time-pill">
-                        <span className="pulse-dot-live"></span>
-                        <span>⏱️ {dutyLoginTime || currentTimeStr}</span>
-                        <span style={{ fontSize: '0.685rem', color: '#047857', background: '#FFFFFF', padding: '0.2rem 0.5rem', borderRadius: '6px', marginLeft: 'auto', fontWeight: '800' }}>
-                          🔒 Auto-Captured from Server
-                        </span>
-                      </div>
-                      <span className="duty-field-hint">Exact timestamp recorded automatically on central server</span>
-                    </div>
-
-                    {/* Parameter 2: Full Name */}
-                    <div className="duty-field-wrapper">
-                      <label className="duty-field-label">
-                        <span>👤 2. Full Name</span>
-                        <span className="req">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        className="duty-input-box"
-                        value={dutyFullName}
-                        onChange={(e) => setDutyFullName(e.target.value)}
-                        placeholder="e.g. Ravi Teja / Audit Student Name"
-                        required
-                      />
-                      <span className="duty-field-hint">Auditor / Articled Assistant Name</span>
-                    </div>
-
-                    {/* Parameter 3: Student Registration No. */}
-                    <div className="duty-field-wrapper">
-                      <label className="duty-field-label">
-                        <span>🎓 3. Student Registration No.</span>
-                        <span className="req">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        className="duty-input-box"
-                        value={dutyStudentRegNo}
-                        onChange={(e) => setDutyStudentRegNo(e.target.value.toUpperCase())}
-                        placeholder="e.g. SRO0684920 / CRO123456"
-                        required
-                      />
-                      <span className="duty-field-hint">ICAI / SRO / CRO / NRO Student Reg. No.</span>
-                    </div>
-
-                    {/* Parameter 4: TTD Audit Unit */}
-                    <div className="duty-field-wrapper full-row">
-                      <label className="duty-field-label">
-                        <span>🏛️ 4. TTD Audit Unit Details attending today</span>
-                        <span className="req">*</span>
-                      </label>
-                      <select 
-                        className="duty-select-box"
-                        value={dutyUnitDetails}
-                        onChange={(e) => setDutyUnitDetails(e.target.value)}
-                        required
-                      >
-                        <option value="">-- Select TTD Audit Unit --</option>
-                        {ORGANIZATIONAL_UNITS.map((u) => (
-                          <option key={u} value={u}>{u}</option>
-                        ))}
-                      </select>
-                      <span className="duty-field-hint">Official 8-unit concurrent & internal audit assignment</span>
-                    </div>
-
-                    {/* Parameter 5: Type of Audit Work */}
-                    <div className="duty-field-wrapper full-row">
-                      <label className="duty-field-label">
-                        <span>📋 5. Type of Audit Work</span>
-                        <span className="req">*</span>
-                      </label>
-                      <select 
-                        className="duty-select-box"
-                        value={dutyAuditWorkType}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === 'Clear selection') {
-                            setDutyAuditWorkType('');
-                          } else {
-                            setDutyAuditWorkType(val);
-                          }
-                        }}
-                        required
-                      >
-                        <option value="">-- Select Audit Work Type --</option>
-                        {AUDIT_WORK_TYPES.map((w) => (
-                          <option key={w} value={w}>{w}</option>
-                        ))}
-                      </select>
-                      <span className="duty-field-hint">Category of audit work being performed today</span>
-                    </div>
-
-                    {/* Parameter 6: Detailed Work Description */}
-                    <div className="duty-field-wrapper full-row">
-                      <label className="duty-field-label">
-                        <span>📝 6. Detailed Work Description</span>
-                        <span className="req">*</span>
-                      </label>
-                      <textarea 
-                        className="duty-textarea-box"
-                        rows="3"
-                        value={dutyWorkObjective}
-                        onChange={(e) => setDutyWorkObjective(e.target.value)}
-                        placeholder="Describe in detail the audit work performed today (findings, procedures, observations)..."
-                        required
-                      />
-                      <span className="duty-field-hint">Narrative of audit procedures, findings, and observations</span>
-                    </div>
-
-                    {/* Parameter 7: Number of Vouchers */}
-                    <div className="duty-field-wrapper">
-                      <label className="duty-field-label">
-                        <span>🧾 7. Number of Vouchers / Documents Verified</span>
-                        <span className="req">*</span>
-                      </label>
-                      <input 
-                        type="number" 
-                        className="duty-input-box"
-                        value={dutyVouchersVerified}
-                        onChange={(e) => setDutyVouchersVerified(e.target.value)}
-                        placeholder="e.g. 45"
-                        min="0"
-                        required
-                      />
-                      <span className="duty-field-hint">Total ledger entries, vouchers, tokens, or documents reviewed</span>
-                    </div>
-
-                    {/* Parameter 8: Target to Achieve */}
-                    <div className="duty-field-wrapper">
-                      <label className="duty-field-label">
-                        <span>🎯 8. Target to Achieve / Expected Completion</span>
-                        <span className="req">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        className="duty-input-box"
-                        value={dutyTargetToAchieve}
-                        onChange={(e) => setDutyTargetToAchieve(e.target.value)}
-                        placeholder="e.g. Complete Donor Cell audit by 3:00 PM"
-                        required
-                      />
-                      <span className="duty-field-hint">Specific audit milestone or completion target for today's shift</span>
-                    </div>
 
                     {/* Parameter 9: CA Remarks */}
                     <div className="duty-field-wrapper full-row">
@@ -1877,31 +1780,159 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Shift Times Panel */}
-                <div style={{ background: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '18px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                  <div className="user-shift-times" style={{ background: 'white', border: '1px solid #FECACA', borderRadius: 12, padding: '0.85rem 1rem', marginBottom: '1.25rem' }}>
-                    <div>
-                      <span style={{ color: '#64748B', fontSize: '0.7rem' }}>TODAY'S VERIFIED LOGIN TIME</span>
-                      <strong style={{ fontSize: '0.95rem', color: '#0F172A' }}>{dutyLoginTime || currentTimeStr}</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#64748B', fontSize: '0.7rem' }}>CURRENT SERVER TIME (LOGOUT TIMESTAMP)</span>
-                      <strong style={{ fontSize: '0.95rem', color: '#DC2626' }}>{currentTimeStr}</strong>
-                    </div>
-                  </div>
 
-                  <div className="duty-field-wrapper full-row" style={{ marginBottom: '1.25rem' }}>
-                    <label className="duty-field-label">
-                      <span>📝 Day-End Handover & Logout Remarks (Optional)</span>
-                    </label>
-                    <textarea 
-                      className="duty-textarea-box"
-                      rows="3"
-                      value={logoutRemarks}
-                      onChange={(e) => setLogoutRemarks(e.target.value)}
-                      placeholder="Briefly state key handover items or notes before logging out..."
-                    />
-                  </div>
+
+                  {/* Shift Times Panel */}
+                  <div style={{ background: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '18px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                    <div className="user-shift-times" style={{ background: 'white', border: '1px solid #FECACA', borderRadius: 12, padding: '0.85rem 1rem', marginBottom: '1.25rem' }}>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: '0.7rem' }}>TODAY'S VERIFIED LOGIN TIME</span>
+                        <strong style={{ fontSize: '0.95rem', color: '#0F172A' }}>{dutyLoginTime || currentTimeStr}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: '0.7rem' }}>CURRENT SERVER TIME (LOGOUT TIMESTAMP)</span>
+                        <strong style={{ fontSize: '0.95rem', color: '#DC2626' }}>{currentTimeStr}</strong>
+                      </div>
+                    </div>
+
+                    {/* Detailed Conclude Shift Form */}
+                    <div className="duty-form-grid" style={{ background: 'white', border: '1px solid #FECACA', borderRadius: 16, padding: '1.5rem', marginBottom: '1.5rem' }}>
+                      
+                      {/* Full Name */}
+                      <div className="duty-field-wrapper">
+                        <label className="duty-field-label">👤 Full Name</label>
+                        <input 
+                          type="text" 
+                          className="duty-input-box"
+                          value={dutyFullName}
+                          onChange={(e) => setDutyFullName(e.target.value)}
+                          placeholder="Full Name"
+                          required
+                        />
+                      </div>
+
+                      {/* Student Registration No */}
+                      <div className="duty-field-wrapper">
+                        <label className="duty-field-label">🆔 Student Registration No.</label>
+                        <input 
+                          type="text" 
+                          className="duty-input-box"
+                          value={dutyStudentRegNo}
+                          onChange={(e) => setDutyStudentRegNo(e.target.value)}
+                          placeholder="Student Registration No."
+                          required
+                        />
+                      </div>
+
+                      {/* TTD Audit Unit Details attended today (Multi Select Checkboxes) */}
+                      <div className="duty-field-wrapper full-row" style={{ marginTop: '0.5rem' }}>
+                        <label className="duty-field-label" style={{ fontWeight: '850', color: '#334155', marginBottom: '0.75rem' }}>
+                          🏛️ TTD Audit Unit Details attended today (Select multiple if applicable)
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                          {ORGANIZATIONAL_UNITS.map(unit => {
+                            const isChecked = logoutUnitsAttended.includes(unit);
+                            return (
+                              <label key={unit} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.75rem', fontWeight: '600', color: '#475569', cursor: 'pointer', background: '#F8FAFC', padding: '0.65rem 0.85rem', borderRadius: '10px', border: isChecked ? '1.5px solid #DC2626' : '1.5px solid #E2E8F0', transition: 'all 0.2s' }}>
+                                <input 
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  style={{ marginTop: '0.15rem', accentColor: '#DC2626' }}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setLogoutUnitsAttended(prev => prev.filter(u => u !== unit));
+                                    } else {
+                                      setLogoutUnitsAttended(prev => [...prev, unit]);
+                                    }
+                                  }}
+                                />
+                                <span>{unit}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* TTD Audit Sub-Unit Details attending today */}
+                      <div className="duty-field-wrapper full-row" style={{ marginTop: '0.5rem' }}>
+                        <label className="duty-field-label">🏢 TTD Audit Sub-Unit Details attending today</label>
+                        <input 
+                          type="text" 
+                          className="duty-input-box"
+                          value={logoutSubUnit}
+                          onChange={(e) => setLogoutSubUnit(e.target.value)}
+                          placeholder="Specify sub-unit or section (e.g. Tirumala Canteen No 2)"
+                          required
+                        />
+                      </div>
+
+                      {/* Type of audit work done for */}
+                      <div className="duty-field-wrapper">
+                        <label className="duty-field-label">📋 Type of audit work done for</label>
+                        <select 
+                          className="duty-select-box"
+                          value={logoutWorkType}
+                          onChange={(e) => setLogoutWorkType(e.target.value)}
+                          required
+                        >
+                          <option value="Monthly Internal Audit">Monthly Internal Audit</option>
+                          <option value="Quaterly Internal Audit">Quaterly Internal Audit</option>
+                          <option value="Half-Yearly Internal Audit">Half-Yearly Internal Audit</option>
+                        </select>
+                      </div>
+
+                      {/* How much of the objective has been completed */}
+                      <div className="duty-field-wrapper">
+                        <label className="duty-field-label">🎯 How much of the objective has been completed</label>
+                        <input 
+                          type="text" 
+                          className="duty-input-box"
+                          value={logoutObjectiveCompleted}
+                          onChange={(e) => setLogoutObjectiveCompleted(e.target.value)}
+                          placeholder="e.g. 80% verification completed, rest carried over"
+                          required
+                        />
+                      </div>
+
+                      {/* Description of the work done today [ Audit Notes or Audit Observations ] */}
+                      <div className="duty-field-wrapper full-row">
+                        <label className="duty-field-label">✍️ Description of the work done today [ Audit Notes or Audit Observations ]</label>
+                        <textarea 
+                          className="duty-textarea-box"
+                          rows="3"
+                          value={logoutNotes}
+                          onChange={(e) => setLogoutNotes(e.target.value)}
+                          placeholder="Enter key findings, observed discrepancies, or daily journal logs..."
+                          required
+                        />
+                      </div>
+
+                      {/* Any Escalations or Any Key focus points from todays works that needs to be highlighted */}
+                      <div className="duty-field-wrapper full-row">
+                        <label className="duty-field-label">⚠️ Any Escalations or Key focus points [ Detailed activity level LOG ]</label>
+                        <textarea 
+                          className="duty-textarea-box"
+                          rows="3"
+                          value={logoutEscalations}
+                          onChange={(e) => setLogoutEscalations(e.target.value)}
+                          placeholder="Report any blockages, discrepancies, pending inputs, or items needing senior review..."
+                          required
+                        />
+                      </div>
+
+                      {/* Logout Handover Remarks */}
+                      <div className="duty-field-wrapper full-row">
+                        <label className="duty-field-label">📝 Day-End Handover & Logout Remarks (Optional)</label>
+                        <textarea 
+                          className="duty-textarea-box"
+                          rows="2"
+                          value={logoutRemarks}
+                          onChange={(e) => setLogoutRemarks(e.target.value)}
+                          placeholder="General remarks or notes before concluding session..."
+                        />
+                      </div>
+
+                    </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                     <button 
@@ -3096,42 +3127,61 @@ export default function App() {
               </div>
 
               <div>
-                <label className="sub-risk-label">Designation & Role:</label>
-                <select 
-                  className="unit-select-custom"
-                  style={{ marginBottom: 0 }}
-                  value={newUserRoleTitle}
-                  onChange={(e) => setNewUserRoleTitle(e.target.value)}
-                >
-                  <option value="Field Auditor">Field Auditor</option>
-                  <option value="Junior Auditor">Junior Auditor</option>
-                  <option value="Senior Field Staff">Senior Field Staff</option>
-                  <option value="Lead Auditor">Lead Auditor</option>
-                  <option value="Compliance Officer">Compliance Officer</option>
-                </select>
+                <label className="sub-risk-label" style={{ fontWeight: '800', display: 'block', marginBottom: '0.4rem' }}>Designation & Role(s):</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', background: '#F8FAFC', padding: '0.75rem', borderRadius: '10px', border: '1.5px solid #E2E8F0', maxHeight: '120px', overflowY: 'auto' }}>
+                  {['Field Auditor', 'Junior Auditor', 'Senior Field Staff', 'Lead Auditor', 'Compliance Officer'].map(role => {
+                    const isChecked = newUserRoleTitle.split(', ').includes(role);
+                    return (
+                      <label key={role} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.725rem', color: '#475569', cursor: 'pointer', margin: 0 }}>
+                        <input 
+                          type="checkbox"
+                          checked={isChecked}
+                          style={{ accentColor: '#4F46E5' }}
+                          onChange={() => {
+                            let currentList = newUserRoleTitle ? newUserRoleTitle.split(', ') : [];
+                            if (isChecked) {
+                              currentList = currentList.filter(r => r !== role);
+                            } else {
+                              currentList = [...currentList, role];
+                            }
+                            currentList = currentList.filter(Boolean);
+                            setNewUserRoleTitle(currentList.join(', ') || 'Field Auditor');
+                          }}
+                        />
+                        <span>{role}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
-                <label className="sub-risk-label">Assigned Organizational Unit:</label>
-                <button 
-                  type="button"
-                  className="unit-picker-trigger-btn"
-                  onClick={() => setUnitPickerModal({
-                    title: 'Select User Unit',
-                    subtitle: 'Assign default unit to new user account',
-                    allowAll: false,
-                    currentValue: newUserUnit,
-                    onSelect: (val) => setNewUserUnit(val)
+                <label className="sub-risk-label" style={{ fontWeight: '800', display: 'block', marginBottom: '0.4rem' }}>Assigned Organizational Unit(s):</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', background: '#F8FAFC', padding: '0.75rem', borderRadius: '10px', border: '1.5px solid #E2E8F0', maxHeight: '150px', overflowY: 'auto' }}>
+                  {ORGANIZATIONAL_UNITS.map(unit => {
+                    const isChecked = newUserUnit.split(', ').includes(unit);
+                    return (
+                      <label key={unit} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.725rem', color: '#475569', cursor: 'pointer', margin: 0 }}>
+                        <input 
+                          type="checkbox"
+                          checked={isChecked}
+                          style={{ accentColor: '#4F46E5', marginTop: '0.15rem' }}
+                          onChange={() => {
+                            let currentList = newUserUnit ? newUserUnit.split(', ') : [];
+                            if (isChecked) {
+                              currentList = currentList.filter(u => u !== unit);
+                            } else {
+                              currentList = [...currentList, unit];
+                            }
+                            currentList = currentList.filter(Boolean);
+                            setNewUserUnit(currentList.join(', ') || 'Procurement [Marketing Department]');
+                          }}
+                        />
+                        <span>{unit}</span>
+                      </label>
+                    );
                   })}
-                >
-                  <div className="unit-trigger-text">
-                    <span className="unit-trigger-sub">Assigned Unit</span>
-                    <strong className="unit-trigger-val">{newUserUnit}</strong>
-                  </div>
-                  <svg className="unit-trigger-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
+                </div>
               </div>
 
               <button type="submit" className="btn-pill-primary" style={{ marginTop: '0.5rem' }}>
@@ -3669,13 +3719,15 @@ export default function App() {
                   className="widget-section-btn btn-mum"
                   onClick={() => {
                     setIsWidgetOpen(false);
-                    setShowMumModal(true);
+                    setMomOrganizer(currentUser?.name || 'Demo Managing Partner');
+                    setMomActiveSubTab('basic');
+                    setShowMomDialog(true);
                   }}
                 >
                   <div className="widget-icon-pill mum">🏛️</div>
                   <div className="widget-item-content">
-                    <span className="widget-item-name">MUM</span>
-                    <span className="widget-item-desc">Monthly Unit Monitoring & Minutes</span>
+                    <span className="widget-item-name">MOM</span>
+                    <span className="widget-item-desc">Minutes of Meeting & Resolutions Ledger</span>
                   </div>
                   <span className="widget-arrow-icon">→</span>
                 </button>
@@ -3819,46 +3871,166 @@ export default function App() {
             </div>
 
             {/* Profile & Credentials Dossier Grid */}
-            <h5 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginBottom: '0.65rem' }}>
-              📋 Official Profile & Credentials Ledger
-            </h5>
+            {isEditingUser ? (
+              <form onSubmit={handleUpdateUser} className="auth-form-stack" style={{ marginBottom: '1.5rem' }}>
+                <h5 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginBottom: '0.65rem' }}>
+                  ✏️ Edit User Profile & Roles
+                </h5>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label className="sub-risk-label" style={{ margin: 0 }}>Full Name:</label>
+                    <input 
+                      type="text" 
+                      className="input-pill-field" 
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem' }}
+                      value={editUserName}
+                      onChange={(e) => setEditUserName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="sub-risk-label" style={{ margin: 0 }}>Email ID:</label>
+                    <input 
+                      type="email" 
+                      className="input-pill-field" 
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem' }}
+                      value={editUserEmail}
+                      onChange={(e) => setEditUserEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="sub-risk-label" style={{ margin: 0 }}>Student Reg. No:</label>
+                    <input 
+                      type="text" 
+                      className="input-pill-field" 
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', background: '#F1F5F9', cursor: 'not-allowed' }}
+                      value={selectedUserDetailModal.studentRegNo || ''}
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <label className="sub-risk-label" style={{ margin: 0 }}>Password (Optional):</label>
+                    <input 
+                      type="text" 
+                      className="input-pill-field" 
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem' }}
+                      placeholder="Leave blank to keep same"
+                      value={editUserPassword}
+                      onChange={(e) => setEditUserPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
 
-            <div className="user-complete-meta-grid" style={{ marginBottom: '1.5rem' }}>
-              <div className="user-meta-cell">
-                <span className="meta-label">🎓 ICAI / Student Reg. No.</span>
-                <span className="meta-val" style={{ color: '#1D4ED8' }}>{selectedUserDetailModal.studentRegNo || 'FCA / Student N/A'}</span>
-              </div>
-              <div className="user-meta-cell">
-                <span className="meta-label">✉️ Official Email</span>
-                <span className="meta-val">{selectedUserDetailModal.email}</span>
-              </div>
-              <div className="user-meta-cell">
-                <span className="meta-label">📞 Contact Phone</span>
-                <span className="meta-val">{selectedUserDetailModal.phone || '+91 98480 12345'}</span>
-              </div>
-              <div className="user-meta-cell">
-                <span className="meta-label">🏛️ Assigned TTD Unit</span>
-                <span className="meta-val">{selectedUserDetailModal.unit}</span>
-              </div>
-              <div className="user-meta-cell">
-                <span className="meta-label">🏢 Designated Sub-Unit</span>
-                <span className="meta-val">{selectedUserDetailModal.subUnit || 'Central Desk'}</span>
-              </div>
-              <div className="user-meta-cell">
-                <span className="meta-label">👤 Reporting Supervisor</span>
-                <span className="meta-val">
-                  {selectedUserDetailModal.managedBy ? (usersDb.find(m => m.id === selectedUserDetailModal.managedBy)?.name || 'Audit Manager') : 'Executive Apex Admin'}
-                </span>
-              </div>
-              <div className="user-meta-cell">
-                <span className="meta-label">📅 Date Onboarded</span>
-                <span className="meta-val">{selectedUserDetailModal.joinedDate || '01-Jan-2024'}</span>
-              </div>
-              <div className="user-meta-cell">
-                <span className="meta-label">🔒 Access Permission Level</span>
-                <span className="meta-val">{selectedUserDetailModal.role}</span>
-              </div>
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label className="sub-risk-label" style={{ fontWeight: '800', display: 'block', marginBottom: '0.2rem' }}>Designation & Role(s):</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', background: '#F8FAFC', padding: '0.5rem', borderRadius: '8px', border: '1.5px solid #E2E8F0', maxHeight: '100px', overflowY: 'auto' }}>
+                      {['Field Auditor', 'Junior Auditor', 'Senior Field Staff', 'Lead Auditor', 'Compliance Officer'].map(role => {
+                        const isChecked = editUserRoleTitle.split(', ').includes(role);
+                        return (
+                          <label key={role} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', color: '#475569', cursor: 'pointer', margin: 0 }}>
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              style={{ accentColor: '#4F46E5' }}
+                              onChange={() => {
+                                let currentList = editUserRoleTitle ? editUserRoleTitle.split(', ') : [];
+                                if (isChecked) {
+                                  currentList = currentList.filter(r => r !== role);
+                                } else {
+                                  currentList = [...currentList, role];
+                                }
+                                currentList = currentList.filter(Boolean);
+                                setEditUserRoleTitle(currentList.join(', ') || 'Field Auditor');
+                              }}
+                            />
+                            <span>{role}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="sub-risk-label" style={{ fontWeight: '800', display: 'block', marginBottom: '0.2rem' }}>Assigned Unit(s):</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', background: '#F8FAFC', padding: '0.5rem', borderRadius: '8px', border: '1.5px solid #E2E8F0', maxHeight: '100px', overflowY: 'auto' }}>
+                      {ORGANIZATIONAL_UNITS.map(unit => {
+                        const isChecked = editUserUnit.split(', ').includes(unit);
+                        return (
+                          <label key={unit} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', fontSize: '0.7rem', color: '#475569', cursor: 'pointer', margin: 0 }}>
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              style={{ accentColor: '#4F46E5', marginTop: '0.15rem' }}
+                              onChange={() => {
+                                let currentList = editUserUnit ? editUserUnit.split(', ') : [];
+                                if (isChecked) {
+                                  currentList = currentList.filter(u => u !== unit);
+                                } else {
+                                  currentList = [...currentList, unit];
+                                }
+                                currentList = currentList.filter(Boolean);
+                                setEditUserUnit(currentList.join(', ') || 'Procurement [Marketing Department]');
+                              }}
+                            />
+                            <span>{unit}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                  <button type="button" className="btn-card-edit-role" onClick={() => setIsEditingUser(false)}>Cancel</button>
+                  <button type="submit" className="btn-pill-primary" style={{ maxWidth: '140px', padding: '0.45rem 1rem' }}>Save Changes</button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <h5 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginBottom: '0.65rem' }}>
+                  📋 Official Profile & Credentials Ledger
+                </h5>
+
+                <div className="user-complete-meta-grid" style={{ marginBottom: '1.5rem' }}>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">🎓 ICAI / Reg. No.</span>
+                    <span className="meta-val" style={{ color: '#1D4ED8' }}>{selectedUserDetailModal.studentRegNo || 'FCA / Student N/A'}</span>
+                  </div>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">✉️ Official Email</span>
+                    <span className="meta-val">{selectedUserDetailModal.email}</span>
+                  </div>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">📞 Contact Phone</span>
+                    <span className="meta-val">{selectedUserDetailModal.phone || '+91 98480 12345'}</span>
+                  </div>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">🏛️ Assigned TTD Unit</span>
+                    <span className="meta-val">{selectedUserDetailModal.unit}</span>
+                  </div>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">🏢 Designated Sub-Unit</span>
+                    <span className="meta-val">{selectedUserDetailModal.subUnit || 'Central Desk'}</span>
+                  </div>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">👤 Reporting Supervisor</span>
+                    <span className="meta-val">
+                      {selectedUserDetailModal.managedBy ? (usersDb.find(m => m.id === selectedUserDetailModal.managedBy)?.name || 'Audit Manager') : 'Executive Apex Admin'}
+                    </span>
+                  </div>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">📅 Date Onboarded</span>
+                    <span className="meta-val">{selectedUserDetailModal.joinedDate || '01-Jan-2024'}</span>
+                  </div>
+                  <div className="user-meta-cell">
+                    <span className="meta-label">🔒 Access Permission Level</span>
+                    <span className="meta-val">{selectedUserDetailModal.role}</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Submitted Duty Reports by this user */}
             <h5 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginBottom: '0.65rem' }}>
@@ -3931,16 +4103,43 @@ export default function App() {
             </div>
 
             {/* Close / Done Button */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1.5px solid #E2E8F0', paddingTop: '1rem' }}>
-              <button 
-                type="button"
-                className="btn-pill-primary"
-                onClick={() => setSelectedUserDetailModal(null)}
-                style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', maxWidth: '180px' }}
-              >
-                Close Dossier
-              </button>
-            </div>
+            {!isEditingUser && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1.5px solid #E2E8F0', paddingTop: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    type="button"
+                    className="btn-card-edit-role"
+                    onClick={() => {
+                      setEditUserName(selectedUserDetailModal.name);
+                      setEditUserEmail(selectedUserDetailModal.email);
+                      setEditUserPassword('');
+                      setEditUserRoleTitle(selectedUserDetailModal.roleTitle || selectedUserDetailModal.role);
+                      setEditUserUnit(selectedUserDetailModal.unit || '');
+                      setIsEditingUser(true);
+                    }}
+                    style={{ padding: '0.45rem 1rem', fontSize: '0.8rem', background: '#F1F5F9', color: '#475569' }}
+                  >
+                    ✏️ Edit User
+                  </button>
+                  <button 
+                    type="button"
+                    className="btn-card-edit-role"
+                    onClick={() => handleDeleteUser(selectedUserDetailModal.id)}
+                    style={{ padding: '0.45rem 1rem', fontSize: '0.8rem', background: '#FEF2F2', color: '#DC2626', borderColor: '#FCA5A5' }}
+                  >
+                    🗑️ Delete User
+                  </button>
+                </div>
+                <button 
+                  type="button"
+                  className="btn-pill-primary"
+                  onClick={() => setSelectedUserDetailModal(null)}
+                  style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', maxWidth: '180px', margin: 0 }}
+                >
+                  Close Dossier
+                </button>
+              </div>
+            )}
 
           </div>
         </div>
