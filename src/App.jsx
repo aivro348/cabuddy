@@ -320,6 +320,7 @@ export default function App() {
     }
 
     // Show Brief Server Stamped Confirmation Toast
+    setIsWidgetOpen(false);
     setLogoutToast({
       time: recordedTime,
       userName: currentUser?.name || 'User'
@@ -334,6 +335,7 @@ export default function App() {
       refreshAllData();
     }, 1200);
   };
+
 
   // 3. User Shift Clock Toggle (Field Users Only)
   const handleUserClockToggle = async () => {
@@ -2345,147 +2347,142 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Background Click-Backdrop when Widget is Open ── */}
-      {isWidgetOpen && (
+      {/* ── Background Click-Backdrop when Widget is Open (After Login) ── */}
+      {isLoggedIn && isWidgetOpen && (
         <div className="widget-click-backdrop" onClick={() => setIsWidgetOpen(false)} />
       )}
 
-      {/* ── Right Bottom Corner Widget Button & 4-Sections Menu ── */}
-      <div className="corner-widget-container">
-        {isWidgetOpen && (
-          <div className="widget-popup-menu" onClick={(e) => e.stopPropagation()}>
-            <div className="widget-menu-header">
-              <div className="widget-header-title">
-                <span style={{ fontSize: '1rem' }}>⚡</span>
-                <div>
-                  <h5>Operations Widget</h5>
-                  <span className="widget-header-sub">4 Quick Sections</span>
+      {/* ── Right Bottom Corner Widget Button & 4-Sections Menu (Only Shown After Login) ── */}
+      {isLoggedIn && (
+        <div className="corner-widget-container">
+          {isWidgetOpen && (
+            <div className="widget-popup-menu" onClick={(e) => e.stopPropagation()}>
+              <div className="widget-menu-header">
+                <div className="widget-header-title">
+                  <span style={{ fontSize: '1rem' }}>⚡</span>
+                  <div>
+                    <h5>Operations Widget</h5>
+                    <span className="widget-header-sub">4 Quick Sections</span>
+                  </div>
                 </div>
+                <button 
+                  type="button" 
+                  className="widget-close-mini"
+                  onClick={() => setIsWidgetOpen(false)}
+                  title="Close Widget Menu"
+                >
+                  ✕
+                </button>
               </div>
-              <button 
-                type="button" 
-                className="widget-close-mini"
-                onClick={() => setIsWidgetOpen(false)}
-                title="Close Widget Menu"
-              >
-                ✕
-              </button>
-            </div>
 
-            <div className="widget-sections-stack">
-              {/* Section 1: Login Button */}
-              <button 
-                type="button" 
-                className="widget-section-btn btn-login"
-                onClick={() => {
-                  setIsWidgetOpen(false);
-                  setShowQuickLoginModal(true);
-                }}
-              >
-                <div className="widget-icon-pill login">🔑</div>
-                <div className="widget-item-content">
-                  <span className="widget-item-name">Login</span>
-                  <span className="widget-item-desc">
-                    {isLoggedIn ? `Switch account (${currentUser?.name?.split(' ')[0]})` : 'Sign in / Switch demo role'}
-                  </span>
-                </div>
-                <span className="widget-arrow-icon">→</span>
-              </button>
+              <div className="widget-sections-stack">
+                {/* Section 1: Login Button */}
+                <button 
+                  type="button" 
+                  className="widget-section-btn btn-login"
+                  onClick={() => {
+                    setIsWidgetOpen(false);
+                    setShowQuickLoginModal(true);
+                  }}
+                >
+                  <div className="widget-icon-pill login">🔑</div>
+                  <div className="widget-item-content">
+                    <span className="widget-item-name">Login</span>
+                    <span className="widget-item-desc">
+                      Switch account ({currentUser?.name?.split(' ')[0]})
+                    </span>
+                  </div>
+                  <span className="widget-arrow-icon">→</span>
+                </button>
 
-              {/* Section 2: Log out Button */}
-              <button 
-                type="button" 
-                className="widget-section-btn btn-logout"
-                onClick={() => {
-                  setIsWidgetOpen(false);
-                  if (isLoggedIn) {
+                {/* Section 2: Log out Button */}
+                <button 
+                  type="button" 
+                  className="widget-section-btn btn-logout"
+                  onClick={() => {
+                    setIsWidgetOpen(false);
                     handleLogout();
-                  } else {
-                    setLogoutToast({
-                      time: currentTimeStr,
-                      userName: 'Guest (Signed Out)'
-                    });
-                    setTimeout(() => setLogoutToast(null), 1400);
-                  }
-                }}
-              >
-                <div className="widget-icon-pill logout">🚪</div>
-                <div className="widget-item-content">
-                  <span className="widget-item-name">Log out</span>
-                  <span className="widget-item-desc">
-                    {isLoggedIn ? 'Stamp exit & end session' : 'Currently signed out'}
-                  </span>
-                </div>
-                <span className="widget-arrow-icon">→</span>
-              </button>
+                  }}
+                >
+                  <div className="widget-icon-pill logout">🚪</div>
+                  <div className="widget-item-content">
+                    <span className="widget-item-name">Log out</span>
+                    <span className="widget-item-desc">
+                      Stamp exit time & end session
+                    </span>
+                  </div>
+                  <span className="widget-arrow-icon">→</span>
+                </button>
 
-              {/* Section 3: MUM Button */}
-              <button 
-                type="button" 
-                className="widget-section-btn btn-mum"
-                onClick={() => {
-                  setIsWidgetOpen(false);
-                  setShowMumModal(true);
-                }}
-              >
-                <div className="widget-icon-pill mum">🏛️</div>
-                <div className="widget-item-content">
-                  <span className="widget-item-name">MUM</span>
-                  <span className="widget-item-desc">Monthly Unit Monitoring & Minutes</span>
-                </div>
-                <span className="widget-arrow-icon">→</span>
-              </button>
+                {/* Section 3: MUM Button */}
+                <button 
+                  type="button" 
+                  className="widget-section-btn btn-mum"
+                  onClick={() => {
+                    setIsWidgetOpen(false);
+                    setShowMumModal(true);
+                  }}
+                >
+                  <div className="widget-icon-pill mum">🏛️</div>
+                  <div className="widget-item-content">
+                    <span className="widget-item-name">MUM</span>
+                    <span className="widget-item-desc">Monthly Unit Monitoring & Minutes</span>
+                  </div>
+                  <span className="widget-arrow-icon">→</span>
+                </button>
 
-              {/* Section 4: Create Task Button */}
-              <button 
-                type="button" 
-                className="widget-section-btn btn-createtask"
-                onClick={() => {
-                  setIsWidgetOpen(false);
-                  if (!assignTargetUserId && usersDb.length > 0) {
-                    const fallbackAuditor = usersDb.find(u => u.role === 'USER') || usersDb[0];
-                    setAssignTargetUserId(fallbackAuditor.id);
-                  }
-                  setShowAssignModal(true);
-                }}
-              >
-                <div className="widget-icon-pill createtask">📋</div>
-                <div className="widget-item-content">
-                  <span className="widget-item-name">Create Task</span>
-                  <span className="widget-item-desc">Dispatch audit task & instructions</span>
-                </div>
-                <span className="widget-arrow-icon">→</span>
-              </button>
+                {/* Section 4: Create Task Button */}
+                <button 
+                  type="button" 
+                  className="widget-section-btn btn-createtask"
+                  onClick={() => {
+                    setIsWidgetOpen(false);
+                    if (!assignTargetUserId && usersDb.length > 0) {
+                      const fallbackAuditor = usersDb.find(u => u.role === 'USER') || usersDb[0];
+                      setAssignTargetUserId(fallbackAuditor.id);
+                    }
+                    setShowAssignModal(true);
+                  }}
+                >
+                  <div className="widget-icon-pill createtask">📋</div>
+                  <div className="widget-item-content">
+                    <span className="widget-item-name">Create Task</span>
+                    <span className="widget-item-desc">Dispatch audit task & instructions</span>
+                  </div>
+                  <span className="widget-arrow-icon">→</span>
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Floating Action Trigger Button (Right Bottom Corner) */}
-        <button 
-          type="button"
-          className={`corner-widget-fab ${isWidgetOpen ? 'open' : ''}`}
-          onClick={() => setIsWidgetOpen(!isWidgetOpen)}
-          title="Quick Operations Widget"
-          aria-label="Toggle Quick Operations Widget"
-        >
-          <div className="fab-icon-wrapper">
-            {isWidgetOpen ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" />
-              </svg>
-            )}
-          </div>
-          {!isWidgetOpen && <span className="fab-badge-chip">4</span>}
-        </button>
-      </div>
+          {/* Floating Action Trigger Button (Right Bottom Corner) */}
+          <button 
+            type="button"
+            className={`corner-widget-fab ${isWidgetOpen ? 'open' : ''}`}
+            onClick={() => setIsWidgetOpen(!isWidgetOpen)}
+            title="Quick Operations Widget"
+            aria-label="Toggle Quick Operations Widget"
+          >
+            <div className="fab-icon-wrapper">
+              {isWidgetOpen ? (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                </svg>
+              )}
+            </div>
+            {!isWidgetOpen && <span className="fab-badge-chip">4</span>}
+          </button>
+        </div>
+      )}
+
 
       {/* ── Bottom iOS Home Indicator ── */}
       <div className="home-indicator-bar">
