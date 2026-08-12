@@ -833,7 +833,7 @@ export default function App() {
         <div className="webapp-navbar-inner">
           <div className="webapp-brand-left">
             <div className="brand-emblem-mini" style={{ background: 'transparent', border: 'none', boxShadow: 'none', width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/calogo.png" alt="CA Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src="/calogo.png?v=2" alt="CA Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div className="brand-name-group">
               <span className="brand-title">CA Buddy</span>
@@ -886,7 +886,7 @@ export default function App() {
             <div className="webapp-auth-center">
               <div className="brand-top-header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
                 <img 
-                  src="/calogo.png" 
+                  src="/calogo.png?v=2" 
                   alt="CA Buddy Logo" 
                   style={{ width: '80px', height: '80px', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
                 />
