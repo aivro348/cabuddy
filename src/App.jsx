@@ -151,6 +151,8 @@ export default function App() {
   const [newUserPassword, setNewUserPassword] = useState('1234567');
   const [newUserRoleTitle, setNewUserRoleTitle] = useState('Field Auditor');
   const [newUserUnit, setNewUserUnit] = useState(ORGANIZATIONAL_UNITS[0]);
+  const [newUserRegNo, setNewUserRegNo] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [editUserName, setEditUserName] = useState('');
   const [editUserEmail, setEditUserEmail] = useState('');
@@ -754,6 +756,8 @@ export default function App() {
           password: newUserPassword || '1234567',
           roleTitle: newUserRoleTitle,
           unit: newUserUnit,
+          studentRegNo: newUserRegNo.trim() || undefined,
+          phone: newUserPhone.trim() || undefined,
           managerId: currentUser?.role === 'MANAGER' ? currentUser.id : 'usr-1'
         })
       });
@@ -762,6 +766,9 @@ export default function App() {
         setShowCreateUserModal(false);
         setNewUserName('');
         setNewUserEmail('');
+        setNewUserPassword('1234567');
+        setNewUserRegNo('');
+        setNewUserPhone('');
         refreshAllData();
       }
     } catch (err) {
@@ -3123,6 +3130,30 @@ export default function App() {
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
                   required
+                />
+              </div>
+
+              <div>
+                <label className="sub-risk-label">ICAI / Student Reg No (Optional):</label>
+                <input 
+                  type="text" 
+                  className="input-pill-field" 
+                  style={{ padding: '0.75rem 1rem' }}
+                  placeholder="e.g. SRO0682194"
+                  value={newUserRegNo}
+                  onChange={(e) => setNewUserRegNo(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="sub-risk-label">Contact Phone No (Optional):</label>
+                <input 
+                  type="text" 
+                  className="input-pill-field" 
+                  style={{ padding: '0.75rem 1rem' }}
+                  placeholder="e.g. +91 98480 12345"
+                  value={newUserPhone}
+                  onChange={(e) => setNewUserPhone(e.target.value)}
                 />
               </div>
 

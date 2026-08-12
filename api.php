@@ -240,8 +240,18 @@ try {
             $newId = 'usr-' . round(microtime(true) * 1000);
             $timeData = getServerTimeDetails();
 
-            $ins = $pdo->prepare("INSERT INTO users (id, name, email, password, role, roleTitle, unit, managedBy, joinedDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $ins->execute([$newId, $name, strtolower($email), $password, $role, $roleTitle, $unit, $managerId, $timeData['dateStr']]);
+            $studentRegNo = trim($input['studentRegNo'] ?? '');
+            if (!$studentRegNo) {
+                $studentRegNo = 'SRO0' . rand(100000, 999999);
+            }
+            $phone = trim($input['phone'] ?? '');
+            if (!$phone) {
+                $phone = '+91 98480 ' . rand(10000, 99999);
+            }
+            $subUnit = trim($input['subUnit'] ?? 'Central Desk');
+
+            $ins = $pdo->prepare("INSERT INTO users (id, name, email, password, role, roleTitle, studentRegNo, phone, unit, subUnit, joinedDate, managedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $ins->execute([$newId, $name, strtolower($email), $password, $role, $roleTitle, $studentRegNo, $phone, $unit, $subUnit, $timeData['dateStr'], $managerId]);
 
             $stmt = $pdo->query("SELECT * FROM users ORDER BY id DESC");
             $users = $stmt->fetchAll();
