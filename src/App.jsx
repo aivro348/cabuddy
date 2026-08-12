@@ -58,7 +58,7 @@ export default function App() {
   const [dutySubmitSuccess, setDutySubmitSuccess] = useState(false);
   const [dutyVouchersVerified, setDutyVouchersVerified] = useState('');
   const [dutyActiveTab, setDutyActiveTab] = useState('sheet'); // 'sheet', 'records', 'all_users', 'all_reports', 'all_attendance', 'moms', 'tasks'
-  const [adminActiveTab, setAdminActiveTab] = useState('users');
+  const [adminActiveTab, setAdminActiveTab] = useState('dashboard');
 
   // ── Hub Active Section State ('entry' | 'logout' | 'moms' | 'tasks' | 'all_users') ──
   const [hubActiveSection, setHubActiveSection] = useState('entry');
@@ -2362,8 +2362,11 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Tab Strip Navigation */}
+                 {/* Tab Strip Navigation */}
                 <div className="mom-tabs-segmented" style={{ marginBottom: '1.5rem' }}>
+                  <button type="button" className={`mom-tab-item ${adminActiveTab === 'dashboard' ? 'active' : ''}`} onClick={() => setAdminActiveTab('dashboard')}>
+                    📊 Dashboard Analytics
+                  </button>
                   <button type="button" className={`mom-tab-item ${adminActiveTab === 'users' ? 'active' : ''}`} onClick={() => setAdminActiveTab('users')}>
                     👥 User Directory ({usersDb.length})
                   </button>
@@ -2384,6 +2387,165 @@ export default function App() {
                 {/* Content Sections based on AdminActiveTab */}
                 <div className="admin-tab-content-wrapper" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: '18px', padding: '1.5rem' }}>
                   
+                  {/* Sub-tab 0: Dashboard & Analytics */}
+                  {adminActiveTab === 'dashboard' && (
+                    <div style={{ animation: 'slideInPage 0.25s ease' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '850', color: '#0F172A' }}>📊 Live Analytics & Audit KPIs</h4>
+                        <span style={{ fontSize: '0.725rem', color: '#64748B' }}>Real-time statistics from submitted daily duty sheets</span>
+                      </div>
+
+                      {/* Dynamic Computations */}
+                      {(() => {
+                        const workTypeCounts = {};
+                        let totalVouchers = 0;
+                        const unitVoucherSums = {};
+                        let activeDutyCount = 0;
+                        let completedDutyCount = 0;
+
+                        dutySubmittedReports.forEach(rep => {
+                          const type = rep.auditWorkType || 'Unassigned';
+                          workTypeCounts[type] = (workTypeCounts[type] || 0) + 1;
+
+                          const vouchers = parseInt(rep.vouchersVerified) || 0;
+                          totalVouchers += vouchers;
+
+                          const unit = rep.unitDetails || 'Auctions';
+                          unitVoucherSums[unit] = (unitVoucherSums[unit] || 0) + vouchers;
+
+                          if (rep.status === 'SUBMITTED' || rep.status === 'ACTIVE_DUTY') {
+                            activeDutyCount++;
+                          } else {
+                            completedDutyCount++;
+                          }
+                        });
+
+                        const workTypesList = Object.entries(workTypeCounts);
+                        const totalReports = dutySubmittedReports.length || 1;
+
+                        return (
+                          <div>
+                            {/* Analytics KPI Row */}
+                            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                              <div className="kpi-card" style={{ background: '#FFFFFF', padding: '1rem 1.25rem', border: '1.5px solid #E2E8F0', borderRadius: '14px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📊</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '850', color: '#0F172A' }}>{dutySubmittedReports.length}</div>
+                                <div style={{ fontSize: '0.725rem', fontWeight: '600', color: '#64748B', marginTop: '0.25rem' }}>Total Daily Duty Sheets</div>
+                              </div>
+                              <div className="kpi-card" style={{ background: '#FFFFFF', padding: '1rem 1.25rem', border: '1.5px solid #E2E8F0', borderRadius: '14px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🎫</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '850', color: '#0F172A' }}>{totalVouchers.toLocaleString()}</div>
+                                <div style={{ fontSize: '0.725rem', fontWeight: '600', color: '#64748B', marginTop: '0.25rem' }}>Total Vouchers Verified</div>
+                              </div>
+                              <div className="kpi-card" style={{ background: '#FFFFFF', padding: '1rem 1.25rem', border: '1.5px solid #E2E8F0', borderRadius: '14px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>⚡</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '850', color: '#10B981' }}>{activeDutyCount} Active</div>
+                                <div style={{ fontSize: '0.725rem', fontWeight: '600', color: '#64748B', marginTop: '0.25rem' }}>Auditors in Field Today</div>
+                              </div>
+                              <div className="kpi-card" style={{ background: '#FFFFFF', padding: '1rem 1.25rem', border: '1.5px solid #E2E8F0', borderRadius: '14px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>✅</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '850', color: '#4F46E5' }}>{completedDutyCount} Done</div>
+                                <div style={{ fontSize: '0.725rem', fontWeight: '600', color: '#64748B', marginTop: '0.25rem' }}>Duties Concluded & Stamped</div>
+                              </div>
+                            </div>
+
+                            {/* Charts Row */}
+                            <div className="charts-flex-row" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '1.5rem', width: '100%' }}>
+                              
+                              {/* Left Chart: Audit Work Types Distribution (Pie/Donut Chart) */}
+                              <div style={{ flex: '1 1 350px', background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '18px', padding: '1.25rem', minWidth: '300px' }}>
+                                <h5 style={{ margin: '0 0 1rem 0', fontSize: '0.825rem', fontWeight: '850', color: '#334155' }}>📋 Audit Work Type Distribution</h5>
+                                
+                                {workTypesList.length === 0 ? (
+                                  <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8', fontSize: '0.8rem' }}>No data collected yet</div>
+                                ) : (
+                                  <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap', margin: '1rem 0' }}>
+                                      <svg width="150" height="150" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', borderRadius: '50%' }}>
+                                        <circle cx="18" cy="18" r="15.915" fill="#EEF2F6" />
+                                        {(() => {
+                                          let cumulativePercent = 0;
+                                          const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6'];
+                                          return workTypesList.map(([type, count], index) => {
+                                            const percent = (count / totalReports) * 100;
+                                            const dashArray = `${percent} ${100 - percent}`;
+                                            const dashOffset = 100 - cumulativePercent;
+                                            cumulativePercent += percent;
+                                            return (
+                                              <circle
+                                                key={type}
+                                                cx="18"
+                                                cy="18"
+                                                r="15.915"
+                                                fill="transparent"
+                                                stroke={colors[index % colors.length]}
+                                                strokeWidth="4"
+                                                strokeDasharray={dashArray}
+                                                strokeDashoffset={dashOffset}
+                                              />
+                                            );
+                                          });
+                                        })()}
+                                      </svg>
+
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left' }}>
+                                        {(() => {
+                                          const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6'];
+                                          return workTypesList.map(([type, count], index) => {
+                                            const percent = Math.round((count / totalReports) * 100);
+                                            return (
+                                              <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.725rem' }}>
+                                                <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '3px', background: colors[index % colors.length] }}></span>
+                                                <span style={{ fontWeight: '700', color: '#475569' }}>{type}:</span>
+                                                <span style={{ fontWeight: '850', color: '#0F172A' }}>{count} ({percent}%)</span>
+                                              </div>
+                                            );
+                                          });
+                                        })()}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Right Chart: Vouchers Verified per Unit (Horizontal Bar Chart) */}
+                              <div style={{ flex: '1 1 350px', background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '18px', padding: '1.25rem', minWidth: '300px' }}>
+                                <h5 style={{ margin: '0 0 1rem 0', fontSize: '0.825rem', fontWeight: '850', color: '#334155' }}>🎫 Vouchers Audited per Organizational Unit</h5>
+
+                                {Object.keys(unitVoucherSums).length === 0 ? (
+                                  <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8', fontSize: '0.8rem' }}>No voucher data recorded yet</div>
+                                ) : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.5rem' }}>
+                                    {(() => {
+                                      const unitList = Object.entries(unitVoucherSums);
+                                      const maxVouchers = Math.max(...unitList.map(([_, sum]) => sum)) || 1;
+
+                                      return unitList.map(([unit, sum], index) => {
+                                        const widthPercent = (sum / maxVouchers) * 100;
+                                        return (
+                                          <div key={unit} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.725rem', fontWeight: '800', color: '#475569' }}>
+                                              <span>🏛️ {unit}</span>
+                                              <span style={{ color: '#0F172A', fontWeight: '850' }}>{sum.toLocaleString()} vouchers</span>
+                                            </div>
+                                            <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                                              <div style={{ width: `${widthPercent}%`, height: '100%', background: 'linear-gradient(90deg, #4F46E5, #818CF8)', borderRadius: '4px' }}></div>
+                                            </div>
+                                          </div>
+                                        );
+                                      });
+                                    })()}
+                                  </div>
+                                )}
+                              </div>
+
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
                   {/* Sub-tab 1: Users Directory */}
                   {adminActiveTab === 'users' && (
                     <div style={{ animation: 'slideInPage 0.2s ease' }}>
