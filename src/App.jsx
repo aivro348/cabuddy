@@ -73,6 +73,7 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('admin');
   const [loginPassword, setLoginPassword] = useState('admin');
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // ── MOM (Minutes of Meeting) Modal State (Matching Images 1, 2, 3) ──
   const [showMomDialog, setShowMomDialog] = useState(false);
@@ -358,6 +359,7 @@ export default function App() {
   // 1. Backend Login (Captures Login Timestamp for ANY role)
   const handleSignIn = async (e) => {
     if (e) e.preventDefault();
+    setLoginError('');
 
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -365,6 +367,13 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPassword })
       });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setLoginError(errData.message || 'Invalid login credentials.');
+        return;
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -377,9 +386,12 @@ export default function App() {
           setDutyActiveTab('sheet');
         }
         refreshAllData();
+      } else {
+        setLoginError(data.message || 'Authentication failed.');
       }
     } catch (err) {
       console.error('Login error:', err);
+      setLoginError('Server connection error. Please ensure the backend is running.');
     }
   };
 
@@ -840,6 +852,12 @@ export default function App() {
                     Forgotten Password?
                   </a>
                 </div>
+
+                {loginError && (
+                  <div style={{ color: '#EF4444', fontSize: '0.75rem', fontWeight: '800', background: '#FEF2F2', border: '1.5px solid #FCA5A5', padding: '0.65rem 0.85rem', borderRadius: '10px', marginBottom: '1rem', textAlign: 'center', lineHeight: 1.35 }}>
+                    ⚠️ {loginError}
+                  </div>
+                )}
 
                 <button type="submit" className="btn-pill-primary">
                   Sign In
