@@ -168,7 +168,47 @@ export default function App() {
     }
   ]);
 
+  // ── Progressive Web App (PWA) Install State ──
+
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isPwaInstallable, setIsPwaInstallable] = useState(false);
+  const [showPwaModal, setShowPwaModal] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsPwaInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    window.addEventListener('appinstalled', () => {
+      setIsPwaInstallable(false);
+      setDeferredPrompt(null);
+      console.log('✅ CA Buddy PWA successfully installed!');
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsPwaInstallable(false);
+      }
+      setDeferredPrompt(null);
+    } else {
+      setShowPwaModal(true);
+    }
+  };
+
   // ── Live Backend Data Fetching ──
+
   const refreshAllData = useCallback(async () => {
     try {
       const [usersRes, attRes, asnRes, cmpRes] = await Promise.all([
@@ -596,42 +636,84 @@ export default function App() {
   const currentUserAssignment = assignmentsDb.find(a => a.assignedToId === currentUser?.id);
 
   return (
-    <div className="device-container">
+    <div className="webapp-shell">
       
-      {/* ── Top iOS Status Bar & Dynamic Island ── */}
-      <div className="status-bar">
-        <span className="status-time">10:45</span>
-        <div className="dynamic-island"></div>
-        <div className="status-icons">
-          <svg width="15" height="11" viewBox="0 0 17 11" fill="currentColor">
-            <rect y="7" width="2.5" height="4" rx="0.5"/>
-            <rect x="4.5" y="5" width="2.5" height="6" rx="0.5"/>
-            <rect x="9" y="2.5" width="2.5" height="8.5" rx="0.5"/>
-            <rect x="13.5" width="2.5" height="11" rx="0.5"/>
-          </svg>
-          <svg width="15" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-            <line x1="12" y1="20" x2="12.01" y2="20"/>
-          </svg>
-          <svg width="18" height="10" viewBox="0 0 22 11" fill="currentColor">
-            <rect x="0.5" y="0.5" width="18" height="10" rx="2.5" fill="none" stroke="currentColor"/>
-            <rect x="2" y="2" width="12" height="7" rx="1.5"/>
-            <path d="M20 4v3" stroke="currentColor" strokeLinecap="round"/>
-          </svg>
-        </div>
-      </div>
+      {/* ── Sticky Top Web App Navigation Bar ── */}
+      <header className="webapp-navbar">
+        <div className="webapp-navbar-inner">
+          <div className="webapp-brand-left">
+            <div className="brand-emblem-mini">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v4M4.93 10.93a7 7 0 1 0 9.9 0L12 8l-2.83 2.93z" />
+                <path d="M9 18h6M10 22h4" />
+              </svg>
+            </div>
+            <div className="brand-name-group">
+              <span className="brand-title">CA Buddy</span>
+              <span className="brand-sub">Enterprise Audit & Robot Vault</span>
+            </div>
+          </div>
 
-      {/* ── Scrollable Body Area ── */}
-      <div className="screen-scroll-body">
+          <div className="webapp-nav-controls">
+            <div className="live-clock-pill">
+              <span className="pulse-dot-live" style={{ marginRight: 2 }}></span>
+              <span>{currentTimeStr}</span>
+            </div>
+
+            {/* PWA Install Button */}
+            <button 
+              type="button"
+              className="btn-pwa-install"
+              onClick={handleInstallClick}
+              title="Install CA Buddy as Desktop / Mobile App"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Install App</span>
+              {isPwaInstallable && (
+                <span className="pulse-dot-live" style={{ background: '#FACC15', width: 6, height: 6, marginLeft: 2 }} />
+              )}
+            </button>
+
+
+            {isLoggedIn && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <span className={`role-badge-pill ${
+                  currentUser.role === 'SUPER_ADMIN' ? 'role-super' : 
+                  currentUser.role === 'MANAGER' ? 'role-manager' : 'role-user'
+                }`}>
+                  {currentUser.role === 'SUPER_ADMIN' ? '👑 Super Admin' : 
+                   currentUser.role === 'MANAGER' ? '💼 Manager' : '📋 Auditor'}
+                </span>
+
+                <button 
+                  className="dash-logout-corner" 
+                  onClick={handleLogout}
+                  title="End Session & Record Logout Timestamp"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                  </svg>
+                  <span>Log Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main Web App Body Area ── */}
+      <main className="webapp-main-content">
 
         {!isLoggedIn ? (
           authView === 'signin' ? (
             /* ═══════════════════════════════════════════════════════
-               ── SIGN IN SCREEN (WITH 1-CLICK ROLE CHIPS) ──
+               ── SIGN IN SCREEN (CENTERED WEB APP CARD) ──
                ═══════════════════════════════════════════════════════ */
-            <div>
+            <div className="webapp-auth-center">
               <div className="role-demo-bar">
                 <button 
                   type="button"
@@ -753,41 +835,13 @@ export default function App() {
              ── LOGGED IN PORTAL (ROLE SEGREGATED) ──
              ═══════════════════════════════════════════════════════ */
           <div>
-            {/* Header Topbar */}
-            <div className="dash-topbar">
-              <button 
-                className="dash-logout-corner" 
-                onClick={handleLogout}
-                title="End Session & Record Logout Timestamp"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                </svg>
-                Log Out
-              </button>
-
-              <div style={{ textAlign: 'center' }}>
-                <span className="dash-brand-title">CA Buddy</span>
-                <span className={`role-badge-pill ${
-                  currentUser.role === 'SUPER_ADMIN' ? 'role-super' : 
-                  currentUser.role === 'MANAGER' ? 'role-manager' : 'role-user'
-                }`} style={{ display: 'block', margin: '2px auto 0' }}>
-                  {currentUser.role === 'SUPER_ADMIN' ? '👑 Executive Super Admin' : 
-                   currentUser.role === 'MANAGER' ? '💼 Department Manager' : '📋 Field Auditor'}
-                </span>
-              </div>
-
-              <div className="dash-avatar-badge" style={{ width: 32, height: 32, fontSize: '0.75rem' }}>
-                {currentUser?.name ? currentUser.name.substring(0, 2).toUpperCase() : 'CA'}
-              </div>
-            </div>
-
             {/* ═══════════════════════════════════════════════════════
                1. 👑 SUPER ADMIN PORTAL (VIEW ALL COMPLAINTS, PDFS & ACCOUNTS)
                ═══════════════════════════════════════════════════════ */}
             {currentUser.role === 'SUPER_ADMIN' && (
               <div>
                 <div className="super-admin-banner">
+
                   <div className="super-meta-top">
                     <h5>👑 Enterprise Audit & Robot Vault</h5>
                     <span style={{ fontSize: '0.65rem', background: '#ECFDF5', color: '#047857', padding: '0.2rem 0.5rem', borderRadius: '6px', fontWeight: '800' }}>
@@ -891,63 +945,65 @@ export default function App() {
                       </div>
                     </div>
 
-                    {structuredAdminComplaints.map(cmp => (
-                      <div key={cmp.id} className="complaint-evidence-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <span className="user-unit-tag" style={{ marginBottom: 4 }}>{cmp.unit}</span>
-                            <h6 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginTop: 2 }}>
-                              {cmp.title}
-                            </h6>
-                          </div>
-                          <span style={{ 
-                            fontSize: '0.65rem', 
-                            fontWeight: '800', 
-                            padding: '0.15rem 0.5rem', 
-                            borderRadius: '6px',
-                            background: cmp.urgency === 'CRITICAL' ? '#FEF2F2' : (cmp.urgency === 'HIGH' ? '#FFF7ED' : '#FFFBEB'),
-                            color: cmp.urgency === 'CRITICAL' ? '#DC2626' : (cmp.urgency === 'HIGH' ? '#EA580C' : '#D97706'),
-                            border: '1px solid currentColor'
-                          }}>
-                            {cmp.urgency} URGENCY
-                          </span>
-                        </div>
-
-                        <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.35 }}>
-                          {cmp.remarks}
-                        </p>
-
-                        {/* File Attachment & Instant View Button */}
-                        <div className="file-attachment-box">
-                          <div className="file-info-group">
-                            <div className={`file-icon-badge ${cmp.fileType?.includes('pdf') ? 'pdf' : 'img'}`}>
-                              {cmp.fileType?.includes('pdf') ? 'PDF' : 'IMG'}
-                            </div>
+                    <div className="responsive-cards-grid">
+                      {structuredAdminComplaints.map(cmp => (
+                        <div key={cmp.id} className="complaint-evidence-card">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
-                              <div className="file-name-text">{cmp.fileName}</div>
-                              <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>{cmp.fileSize || 'Verified File'}</div>
+                              <span className="user-unit-tag" style={{ marginBottom: 4 }}>{cmp.unit}</span>
+                              <h6 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginTop: 2 }}>
+                                {cmp.title}
+                              </h6>
                             </div>
+                            <span style={{ 
+                              fontSize: '0.65rem', 
+                              fontWeight: '800', 
+                              padding: '0.15rem 0.5rem', 
+                              borderRadius: '6px',
+                              background: cmp.urgency === 'CRITICAL' ? '#FEF2F2' : (cmp.urgency === 'HIGH' ? '#FFF7ED' : '#FFFBEB'),
+                              color: cmp.urgency === 'CRITICAL' ? '#DC2626' : (cmp.urgency === 'HIGH' ? '#EA580C' : '#D97706'),
+                              border: '1px solid currentColor'
+                            }}>
+                              {cmp.urgency} URGENCY
+                            </span>
                           </div>
-                          <button 
-                            className="btn-view-doc"
-                            onClick={() => setViewingDoc(cmp)}
-                          >
-                            👁️ View Document
-                          </button>
-                        </div>
 
-                        <div className="audit-timeframe-box">
-                          <span>⏱️ Timeframe:</span>
-                          <strong>{cmp.timeFrame}</strong>
-                          <span style={{ marginLeft: 'auto', color: '#10B981', fontWeight: '700' }}>● Robot Vault Verified</span>
-                        </div>
+                          <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.35 }}>
+                            {cmp.remarks}
+                          </p>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.685rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
-                          <span>Auditor: <strong>{cmp.auditorName}</strong></span>
-                          <span>Manager: <strong>{cmp.managerName}</strong></span>
+                          {/* File Attachment & Instant View Button */}
+                          <div className="file-attachment-box">
+                            <div className="file-info-group">
+                              <div className={`file-icon-badge ${cmp.fileType?.includes('pdf') ? 'pdf' : 'img'}`}>
+                                {cmp.fileType?.includes('pdf') ? 'PDF' : 'IMG'}
+                              </div>
+                              <div>
+                                <div className="file-name-text">{cmp.fileName}</div>
+                                <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>{cmp.fileSize || 'Verified File'}</div>
+                              </div>
+                            </div>
+                            <button 
+                              className="btn-view-doc"
+                              onClick={() => setViewingDoc(cmp)}
+                            >
+                              👁️ View Document
+                            </button>
+                          </div>
+
+                          <div className="audit-timeframe-box">
+                            <span>⏱️ Timeframe:</span>
+                            <strong>{cmp.timeFrame}</strong>
+                            <span style={{ marginLeft: 'auto', color: '#10B981', fontWeight: '700' }}>● Robot Vault Verified</span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.685rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
+                            <span>Auditor: <strong>{cmp.auditorName}</strong></span>
+                            <span>Manager: <strong>{cmp.managerName}</strong></span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
 
                     {structuredAdminComplaints.length === 0 && (
                       <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94A3B8', fontSize: '0.825rem' }}>
@@ -970,49 +1026,52 @@ export default function App() {
                       </button>
                     </div>
 
-                    {usersDb.map((user, index) => {
-                      const userLog = attendanceLedger.find(l => l.userId === user.id || l.userEmail === user.email);
-                      const loginTimeDisplay = userLog ? userLog.loginTime : (user.role === 'SUPER_ADMIN' ? '08:30:00 AM' : '09:00:00 AM');
-                      const logoutTimeDisplay = userLog ? (userLog.logoutTime || (userLog.active ? '● On-Duty Active' : 'Logged Out')) : '● Active';
+                    <div className="responsive-cards-grid">
+                      {usersDb.map((user, index) => {
+                        const userLog = attendanceLedger.find(l => l.userId === user.id || l.userEmail === user.email);
+                        const loginTimeDisplay = userLog ? userLog.loginTime : (user.role === 'SUPER_ADMIN' ? '08:30:00 AM' : '09:00:00 AM');
+                        const logoutTimeDisplay = userLog ? (userLog.logoutTime || (userLog.active ? '● On-Duty Active' : 'Logged Out')) : '● Active';
 
-                      return (
-                        <div key={user.id} className="enterprise-account-card">
-                          <div className="acc-card-header">
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                              <span className="sno-pill">#{index + 1}</span>
-                              <span className="acc-name-text">{user.name}</span>
+                        return (
+                          <div key={user.id} className="enterprise-account-card">
+                            <div className="acc-card-header">
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <span className="sno-pill">#{index + 1}</span>
+                                <span className="acc-name-text">{user.name}</span>
+                              </div>
+                              <span className={`role-badge-pill ${
+                                user.role === 'SUPER_ADMIN' ? 'role-super' : 
+                                user.role === 'MANAGER' ? 'role-manager' : 'role-user'
+                              }`}>
+                                {user.roleTitle || user.role}
+                              </span>
                             </div>
-                            <span className={`role-badge-pill ${
-                              user.role === 'SUPER_ADMIN' ? 'role-super' : 
-                              user.role === 'MANAGER' ? 'role-manager' : 'role-user'
-                            }`}>
-                              {user.roleTitle || user.role}
-                            </span>
-                          </div>
 
-                          <div className="acc-email-sub">
-                            ✉️ {user.email} • <strong>{user.unit}</strong>
-                          </div>
+                            <div className="acc-email-sub">
+                              ✉️ {user.email} • <strong>{user.unit}</strong>
+                            </div>
 
-                          <div className="acc-time-grid">
-                            <div>
-                              <span>LOGIN TIME</span>
-                              <strong>{loginTimeDisplay}</strong>
-                            </div>
-                            <div>
-                              <span>LOGOUT TIME</span>
-                              <strong style={{ color: logoutTimeDisplay.includes('Active') ? '#10B981' : '#0F172A' }}>
-                                {logoutTimeDisplay}
-                              </strong>
+                            <div className="acc-time-grid">
+                              <div>
+                                <span>LOGIN TIME</span>
+                                <strong>{loginTimeDisplay}</strong>
+                              </div>
+                              <div>
+                                <span>LOGOUT TIME</span>
+                                <strong style={{ color: logoutTimeDisplay.includes('Active') ? '#10B981' : '#0F172A' }}>
+                                  {logoutTimeDisplay}
+                                </strong>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
             )}
+
 
             {/* ═══════════════════════════════════════════════════════
                2. 💼 MANAGER PORTAL (DECIDE USER ROLES & VIEW TEAM COMPLAINTS)
@@ -1059,38 +1118,40 @@ export default function App() {
                       </button>
                     </div>
 
-                    {managerTeamUsers.map((user, index) => (
-                      <div key={user.id} className="enterprise-account-card">
-                        <div className="acc-card-header">
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <span className="sno-pill">#{index + 1}</span>
-                            <span className="acc-name-text">{user.name}</span>
+                    <div className="responsive-cards-grid">
+                      {managerTeamUsers.map((user, index) => (
+                        <div key={user.id} className="enterprise-account-card">
+                          <div className="acc-card-header">
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <span className="sno-pill">#{index + 1}</span>
+                              <span className="acc-name-text">{user.name}</span>
+                            </div>
+                            <span className="role-badge-pill role-user">
+                              {user.roleTitle || 'Field Auditor'}
+                            </span>
                           </div>
-                          <span className="role-badge-pill role-user">
-                            {user.roleTitle || 'Field Auditor'}
-                          </span>
-                        </div>
 
-                        <div className="acc-email-sub">
-                          ✉️ {user.email} • <strong>{user.unit}</strong>
-                        </div>
+                          <div className="acc-email-sub">
+                            ✉️ {user.email} • <strong>{user.unit}</strong>
+                          </div>
 
-                        {/* Manager Role Assignment Button */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #F1F5F9', paddingTop: '0.4rem', marginTop: '0.2rem' }}>
-                          <button 
-                            className="btn-create-user"
-                            style={{ padding: '0.3rem 0.65rem', fontSize: '0.685rem' }}
-                            onClick={() => {
-                              setEditingRoleUser(user);
-                              setSelectedRoleTitle(user.roleTitle || AUDITOR_ROLES[0]);
-                              setSelectedRoleUnit(user.unit || ORGANIZATIONAL_UNITS[0]);
-                            }}
-                          >
-                            ✏️ Decide User Role
-                          </button>
+                          {/* Manager Role Assignment Button */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #F1F5F9', paddingTop: '0.4rem', marginTop: '0.2rem' }}>
+                            <button 
+                              className="btn-create-user"
+                              style={{ padding: '0.3rem 0.65rem', fontSize: '0.685rem' }}
+                              onClick={() => {
+                                setEditingRoleUser(user);
+                                setSelectedRoleTitle(user.roleTitle || AUDITOR_ROLES[0]);
+                                setSelectedRoleUnit(user.unit || ORGANIZATIONAL_UNITS[0]);
+                              }}
+                            >
+                              ✏️ Decide User Role
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
 
                     {managerTeamUsers.length === 0 && (
                       <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94A3B8', fontSize: '0.825rem' }}>
@@ -1113,56 +1174,58 @@ export default function App() {
                       <span style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: '700' }}>● Live Robot Sync</span>
                     </div>
 
-                    {managerTeamComplaints.map(cmp => (
-                      <div key={cmp.id} className="complaint-evidence-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <span className="user-unit-tag" style={{ marginBottom: 4 }}>{cmp.unit}</span>
-                            <h6 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginTop: 2 }}>
-                              {cmp.title}
-                            </h6>
-                          </div>
-                          <span style={{ 
-                            fontSize: '0.65rem', 
-                            fontWeight: '800', 
-                            padding: '0.15rem 0.5rem', 
-                            borderRadius: '6px',
-                            background: cmp.urgency === 'CRITICAL' ? '#FEF2F2' : '#FFF7ED',
-                            color: cmp.urgency === 'CRITICAL' ? '#DC2626' : '#EA580C',
-                            border: '1px solid currentColor'
-                          }}>
-                            {cmp.urgency}
-                          </span>
-                        </div>
-
-                        <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.35 }}>
-                          {cmp.remarks}
-                        </p>
-
-                        <div className="file-attachment-box">
-                          <div className="file-info-group">
-                            <div className={`file-icon-badge ${cmp.fileType?.includes('pdf') ? 'pdf' : 'img'}`}>
-                              {cmp.fileType?.includes('pdf') ? 'PDF' : 'IMG'}
-                            </div>
+                    <div className="responsive-cards-grid">
+                      {managerTeamComplaints.map(cmp => (
+                        <div key={cmp.id} className="complaint-evidence-card">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
-                              <div className="file-name-text">{cmp.fileName}</div>
-                              <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>{cmp.fileSize || 'Verified File'}</div>
+                              <span className="user-unit-tag" style={{ marginBottom: 4 }}>{cmp.unit}</span>
+                              <h6 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginTop: 2 }}>
+                                {cmp.title}
+                              </h6>
                             </div>
+                            <span style={{ 
+                              fontSize: '0.65rem', 
+                              fontWeight: '800', 
+                              padding: '0.15rem 0.5rem', 
+                              borderRadius: '6px',
+                              background: cmp.urgency === 'CRITICAL' ? '#FEF2F2' : '#FFF7ED',
+                              color: cmp.urgency === 'CRITICAL' ? '#DC2626' : '#EA580C',
+                              border: '1px solid currentColor'
+                            }}>
+                              {cmp.urgency}
+                            </span>
                           </div>
-                          <button 
-                            className="btn-view-doc"
-                            onClick={() => setViewingDoc(cmp)}
-                          >
-                            👁️ View Document
-                          </button>
-                        </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.685rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
-                          <span>Auditor: <strong>{cmp.auditorName}</strong></span>
-                          <span>Timestamp: <strong>{cmp.serverTimestamp}</strong></span>
+                          <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.35 }}>
+                            {cmp.remarks}
+                          </p>
+
+                          <div className="file-attachment-box">
+                            <div className="file-info-group">
+                              <div className={`file-icon-badge ${cmp.fileType?.includes('pdf') ? 'pdf' : 'img'}`}>
+                                {cmp.fileType?.includes('pdf') ? 'PDF' : 'IMG'}
+                              </div>
+                              <div>
+                                <div className="file-name-text">{cmp.fileName}</div>
+                                <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>{cmp.fileSize || 'Verified File'}</div>
+                              </div>
+                            </div>
+                            <button 
+                              className="btn-view-doc"
+                              onClick={() => setViewingDoc(cmp)}
+                            >
+                              👁️ View Document
+                            </button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.685rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
+                            <span>Auditor: <strong>{cmp.auditorName}</strong></span>
+                            <span>Timestamp: <strong>{cmp.serverTimestamp}</strong></span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
 
                     {managerTeamComplaints.length === 0 && (
                       <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94A3B8', fontSize: '0.825rem' }}>
@@ -1185,21 +1248,23 @@ export default function App() {
                       </button>
                     </div>
 
-                    {assignmentsDb.filter(a => a.managerId === currentUser.id).map(asn => (
-                      <div key={asn.id} className="assignment-card">
-                        <div className="assignment-card-header">
-                          <span className="user-unit-tag">{asn.unit}</span>
-                          <span className="assignment-task-badge">{asn.status}</span>
+                    <div className="responsive-cards-grid">
+                      {assignmentsDb.filter(a => a.managerId === currentUser.id).map(asn => (
+                        <div key={asn.id} className="assignment-card">
+                          <div className="assignment-card-header">
+                            <span className="user-unit-tag">{asn.unit}</span>
+                            <span className="assignment-task-badge">{asn.status}</span>
+                          </div>
+                          <h6 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A', marginTop: '0.25rem' }}>{asn.taskTitle}</h6>
+                          <p style={{ fontSize: '0.75rem', color: '#475569', margin: '0.35rem 0', lineHeight: 1.3 }}>{asn.instructions}</p>
+                          
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '0.4rem', fontSize: '0.685rem', color: '#64748B' }}>
+                            <span>Assigned To: <strong>{asn.assignedToName}</strong></span>
+                            <span>Deadline: <strong>{asn.deadline}</strong></span>
+                          </div>
                         </div>
-                        <h6 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A', marginTop: '0.25rem' }}>{asn.taskTitle}</h6>
-                        <p style={{ fontSize: '0.75rem', color: '#475569', margin: '0.35rem 0', lineHeight: 1.3 }}>{asn.instructions}</p>
-                        
-                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '0.4rem', fontSize: '0.685rem', color: '#64748B' }}>
-                          <span>Assigned To: <strong>{asn.assignedToName}</strong></span>
-                          <span>Deadline: <strong>{asn.deadline}</strong></span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -1216,67 +1281,70 @@ export default function App() {
                       <span style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: '700' }}>● Verified</span>
                     </div>
 
-                    {managerTeamAttendance.map((item, index) => (
-                      <div key={item.id} className="enterprise-account-card">
-                        <div className="acc-card-header">
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <span className="sno-pill">#{index + 1}</span>
-                            <span className="acc-name-text">{item.userName}</span>
+                    <div className="responsive-cards-grid">
+                      {managerTeamAttendance.map((item, index) => (
+                        <div key={item.id} className="enterprise-account-card">
+                          <div className="acc-card-header">
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <span className="sno-pill">#{index + 1}</span>
+                              <span className="acc-name-text">{item.userName}</span>
+                            </div>
+                            <span style={{ 
+                              fontSize: '0.65rem', 
+                              fontWeight: '700', 
+                              padding: '0.15rem 0.5rem', 
+                              borderRadius: 'var(--radius-pill)',
+                              background: item.active ? '#ECFDF5' : '#F1F5F9',
+                              color: item.active ? '#047857' : '#64748B'
+                            }}>
+                              {item.active ? '● Active On-Duty' : 'Logged Out'}
+                            </span>
                           </div>
-                          <span style={{ 
-                            fontSize: '0.65rem', 
-                            fontWeight: '700', 
-                            padding: '0.15rem 0.5rem', 
-                            borderRadius: 'var(--radius-pill)',
-                            background: item.active ? '#ECFDF5' : '#F1F5F9',
-                            color: item.active ? '#047857' : '#64748B'
-                          }}>
-                            {item.active ? '● Active On-Duty' : 'Logged Out'}
-                          </span>
-                        </div>
 
-                        <div className="acc-email-sub">
-                          ✉️ {item.userEmail} • <strong>{item.unit}</strong>
-                        </div>
-
-                        <div className="acc-time-grid">
-                          <div>
-                            <span>SERVER LOGIN TIME</span>
-                            <strong>{item.loginTime}</strong>
+                          <div className="acc-email-sub">
+                            ✉️ {item.userEmail} • <strong>{item.unit}</strong>
                           </div>
-                          <div>
-                            <span>SERVER LOGOUT TIME</span>
-                            <strong style={{ color: item.logoutTime ? '#0F172A' : '#10B981' }}>
-                              {item.logoutTime || '● Currently Active'}
-                            </strong>
+
+                          <div className="acc-time-grid">
+                            <div>
+                              <span>SERVER LOGIN TIME</span>
+                              <strong>{item.loginTime}</strong>
+                            </div>
+                            <div>
+                              <span>SERVER LOGOUT TIME</span>
+                              <strong style={{ color: item.logoutTime ? '#0F172A' : '#10B981' }}>
+                                {item.logoutTime || '● Currently Active'}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: '0.725rem', color: '#475569', background: '#FFFBEB', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #FDE68A', marginTop: '0.2rem' }}>
+                            <span>📝 <strong>Manager Remarks:</strong> {item.managerRemarks || 'No remarks added yet.'}</span>
+                          </div>
+
+                          <div className="manager-remark-box">
+                            <input 
+                              type="text" 
+                              className="manager-remark-input"
+                              placeholder="Add or update evaluation remark..."
+                              value={remarkInputs[item.id] || ''}
+                              onChange={(e) => setRemarkInputs({ ...remarkInputs, [item.id]: e.target.value })}
+                            />
+                            <button 
+                              className="manager-remark-btn"
+                              onClick={() => handleSaveRemark(item.id)}
+                            >
+                              Save
+                            </button>
                           </div>
                         </div>
-
-                        <div style={{ fontSize: '0.725rem', color: '#475569', background: '#FFFBEB', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #FDE68A', marginTop: '0.2rem' }}>
-                          <span>📝 <strong>Manager Remarks:</strong> {item.managerRemarks || 'No remarks added yet.'}</span>
-                        </div>
-
-                        <div className="manager-remark-box">
-                          <input 
-                            type="text" 
-                            className="manager-remark-input"
-                            placeholder="Add or update evaluation remark..."
-                            value={remarkInputs[item.id] || ''}
-                            onChange={(e) => setRemarkInputs({ ...remarkInputs, [item.id]: e.target.value })}
-                          />
-                          <button 
-                            className="manager-remark-btn"
-                            onClick={() => handleSaveRemark(item.id)}
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
             )}
+
 
             {/* ═══════════════════════════════════════════════════════
                3. 📋 FIELD USER PORTAL (SUB-RISK SELECTION & FILE UPLOAD)
@@ -1569,9 +1637,8 @@ export default function App() {
           </div>
         )}
 
-      </div>
-
       {/* ── Toast Modal: Server Stamped Logout Confirmation ── */}
+
       {logoutToast && (
         <div className="logout-stamp-toast">
           <div style={{ fontSize: '1.5rem', marginBottom: '0.35rem' }}>🔒</div>
@@ -2484,12 +2551,62 @@ export default function App() {
       )}
 
 
-      {/* ── Bottom iOS Home Indicator ── */}
-      <div className="home-indicator-bar">
-        <div className="home-indicator-pill"></div>
-      </div>
+      {/* ── Modal: PWA Web App Installation Guide ── */}
+      {showPwaModal && (
+        <div className="modal-overlay" onClick={() => setShowPwaModal(false)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h4>📥 Install CA Buddy Web App</h4>
+                <p style={{ fontSize: '0.725rem', color: '#64748B' }}>Standalone native experience for macOS, Windows, iOS & Android</p>
+              </div>
+              <button className="close-btn" onClick={() => setShowPwaModal(false)}>✕</button>
+            </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', margin: '0.5rem 0 1.25rem' }}>
+              <div style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '0.85rem' }}>
+                <strong style={{ fontSize: '0.825rem', color: '#0F172A', display: 'block', marginBottom: '4px' }}>💻 Desktop (Chrome, Edge & Brave):</strong>
+                <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
+                  Click the <strong>Install icon (⊕ or 💻)</strong> on the right side of the browser address bar, or click <strong>Install App</strong> in the top navigation bar.
+                </p>
+              </div>
+
+              <div style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '0.85rem' }}>
+                <strong style={{ fontSize: '0.825rem', color: '#0F172A', display: 'block', marginBottom: '4px' }}>📱 iOS (iPhone & iPad Safari):</strong>
+                <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
+                  Tap the <strong>Share icon</strong> at the bottom of Safari, scroll down and tap <strong>"Add to Home Screen"</strong>.
+                </p>
+              </div>
+
+              <div style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '0.85rem' }}>
+                <strong style={{ fontSize: '0.825rem', color: '#0F172A', display: 'block', marginBottom: '4px' }}>🤖 Android (Chrome):</strong>
+                <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
+                  Tap the three-dots menu (⋮) at the top-right of Chrome, then select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.
+                </p>
+              </div>
+            </div>
+
+            <button 
+              type="button" 
+              className="btn-pill-primary"
+              onClick={() => {
+                if (deferredPrompt) {
+                  deferredPrompt.prompt();
+                  setShowPwaModal(false);
+                } else {
+                  setShowPwaModal(false);
+                }
+              }}
+            >
+              {deferredPrompt ? '🚀 Launch Direct Installation' : '✓ Got It / Close'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      </main>
     </div>
   );
 }
+
 

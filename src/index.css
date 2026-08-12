@@ -60,111 +60,191 @@ body {
   color: var(--text-dark);
   min-height: 100vh;
   margin: 0;
+  padding: 0;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1.5rem;
+  flex-direction: column;
+  overflow-x: hidden;
 }
 
 #root {
   width: 100%;
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
 }
 
-/* ── Realistic Mobile Device Frame Shell ── */
-.device-container {
+/* ── Modern Web App Master Shell ── */
+.webapp-shell {
   width: 100%;
-  max-width: 450px;
-  height: 900px;
-  background: var(--surface-white);
-  border-radius: var(--radius-device);
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.22),
-              0 0 0 12px #1E293B,
-              0 0 0 14px #475569,
-              0 0 0 16px rgba(0, 0, 0, 0.1);
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
-  animation: fadeInContainer 0.5s var(--ease-smooth);
+  animation: fadeInApp 0.4s var(--ease-smooth);
 }
 
-@keyframes fadeInContainer {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
+@keyframes fadeInApp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Status Bar & Dynamic Island */
-.status-bar {
-  height: 46px;
-  padding: 0 1.75rem;
+/* ── Top Web App Navigation Bar ── */
+.webapp-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 45;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05);
+}
+
+.webapp-navbar-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: transparent;
-  z-index: 20;
-  flex-shrink: 0;
+  gap: 1rem;
 }
 
-.status-time {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #0F172A;
-  letter-spacing: -0.2px;
-}
-
-.dynamic-island {
-  width: 105px;
-  height: 26px;
-  background: #0F172A;
-  border-radius: 20px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 10px;
-}
-
-.status-icons {
+.webapp-brand-left {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #0F172A;
+  gap: 0.75rem;
 }
 
-/* Bottom Home Indicator */
-.home-indicator-bar {
-  height: 22px;
+.brand-emblem-mini {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FEF08A 0%, #10B981 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  flex-shrink: 0;
-  z-index: 20;
+  color: #0F172A;
+  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.2);
+  border: 1.5px solid #FFFFFF;
 }
 
-.home-indicator-pill {
-  width: 135px;
-  height: 4px;
-  background: #0F172A;
-  border-radius: 4px;
-}
-
-/* ── Screen Scrollable Area ── */
-.screen-scroll-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.25rem 1.35rem 1.25rem;
+.brand-name-group {
   display: flex;
   flex-direction: column;
-  animation: fadeInContent 0.35s var(--ease-smooth);
 }
 
-@keyframes fadeInContent {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+.brand-name-group .brand-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.2;
 }
+
+.brand-name-group .brand-sub {
+  font-size: 0.685rem;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.webapp-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* PWA Install Button */
+.btn-pwa-install {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FEF08A;
+  border: 1.5px solid #FACC15;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(250, 204, 21, 0.2);
+  transition: all 0.2s var(--ease-smooth);
+}
+
+.btn-pwa-install:hover {
+  background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(250, 204, 21, 0.35);
+}
+
+.live-clock-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* ── Web App Main Body Layout ── */
+.webapp-main-content {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3.5rem;
+  flex: 1;
+}
+
+/* ── Responsive Multi-Column Grids for Desktop ── */
+.responsive-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1rem;
+}
+
+.responsive-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .responsive-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .responsive-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .webapp-navbar-inner {
+    padding: 0.65rem 1rem;
+  }
+  .webapp-main-content {
+    padding: 1rem 0.75rem 3.5rem;
+  }
+}
+
+/* ── Centered Auth Card for Web App ── */
+.webapp-auth-center {
+  max-width: 480px;
+  width: 100%;
+  margin: 2.5rem auto;
+  background: var(--surface-white);
+  border-radius: 28px;
+  padding: 2.25rem;
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.12),
+              0 0 0 1px rgba(226, 232, 240, 0.8);
+  border: 1.5px solid #E2E8F0;
+  animation: fadeInApp 0.4s var(--ease-smooth);
+}
+
 
 /* ── Role Demo Selector Banner ── */
 .role-demo-bar {
@@ -1277,6 +1357,19 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
+.live-session-card {
+  max-width: 860px;
+  margin: 0 auto 1rem;
+  background: white;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 18px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
 .clock-toggle-btn {
   padding: 0.5rem 0.95rem;
   border-radius: var(--radius-pill);
@@ -1300,11 +1393,12 @@ body {
 }
 
 .user-assigned-notice {
+  max-width: 860px;
+  margin: 0 auto 1rem;
   background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
   border: 1px solid #A7F3D0;
   border-radius: 16px;
   padding: 0.85rem 1rem;
-  margin-bottom: 1rem;
 }
 
 .user-assigned-notice h6 {
@@ -1321,40 +1415,48 @@ body {
 
 .evo-card-container {
   background: white;
-  border: 1px solid var(--border-input);
+  border: 1.5px solid var(--border-input);
   border-radius: 20px;
-  padding: 1.15rem;
+  padding: 1.4rem;
+  max-width: 860px;
+  margin: 0 auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
-/* ── MODALS ── */
+
+/* ── MODALS (RESPONSIVE WEB APP DIALOGS) ── */
 .modal-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(6px);
-  z-index: 50;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 1.25rem;
 }
 
 .modal-sheet {
   width: 100%;
-  max-height: 88%;
+  max-width: 580px;
+  max-height: 88vh;
   overflow-y: auto;
   background: white;
-  border-radius: 28px 28px 0 0;
-  padding: 1.4rem 1.35rem 2rem;
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
-  animation: slideUp 0.3s var(--ease-smooth);
+  border-radius: 24px;
+  padding: 1.5rem;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25);
+  animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1.5px solid #E2E8F0;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-header {
@@ -1382,6 +1484,12 @@ body {
   cursor: pointer;
   color: #64748B;
   font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
 }
 
 /* ── DOCUMENT VIEWER MODAL ── */
@@ -1395,7 +1503,7 @@ body {
 
 .doc-viewer-img {
   width: 100%;
-  max-height: 320px;
+  max-height: 380px;
   object-fit: contain;
   border-radius: 12px;
   border: 1px solid #E2E8F0;
@@ -1404,7 +1512,7 @@ body {
 
 .doc-viewer-pdf-frame {
   width: 100%;
-  height: 320px;
+  height: 340px;
   border-radius: 12px;
   border: 1px solid #E2E8F0;
   background: #F8FAFC;
@@ -1420,26 +1528,27 @@ body {
    ── RIGHT BOTTOM CORNER WIDGET BUTTON & 4-SECTIONS ──
    ═══════════════════════════════════════════════════════ */
 .corner-widget-container {
-  position: absolute;
-  bottom: 26px;
-  right: 18px;
-  z-index: 85;
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 99;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
 
 .widget-click-backdrop {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 80;
+  z-index: 95;
   background: rgba(15, 23, 42, 0.35);
   backdrop-filter: blur(2px);
   animation: fadeInBackdrop 0.2s ease;
 }
+
 
 @keyframes fadeInBackdrop {
   from { opacity: 0; }
