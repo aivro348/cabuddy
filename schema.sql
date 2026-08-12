@@ -1,8 +1,6 @@
 -- CA Buddy MySQL Database Schema
 -- Execute these queries inside your cPanel phpMyAdmin / MySQL Database page
 
-USE `cabuddy-353131378c7f`;
-
 -- 1. Users table
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(50) PRIMARY KEY,
@@ -38,8 +36,8 @@ CREATE TABLE IF NOT EXISTS attendance (
     serverUtcIso VARCHAR(100),
     serverLogoutIso VARCHAR(100),
     managerRemarks TEXT,
-    loginLocation TEXT, -- JSON Stringified
-    logoutLocation TEXT -- JSON Stringified
+    loginLocation TEXT,
+    logoutLocation TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 3. Daily Duty Reports table
