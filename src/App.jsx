@@ -356,16 +356,46 @@ export default function App() {
     }
   };
 
+  // Helper: Capture GPS Location with High Accuracy (enableHighAccuracy tries for < 5m accuracy)
+  const getGpsLocation = () => {
+    return new Promise((resolve) => {
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          });
+        },
+        (error) => {
+          console.warn('GPS location capture warning:', error.message);
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 0
+        }
+      );
+    });
+  };
+
   // 1. Backend Login (Captures Login Timestamp for ANY role)
   const handleSignIn = async (e) => {
     if (e) e.preventDefault();
     setLoginError('');
 
+    const location = await getGpsLocation();
+
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword })
+        body: JSON.stringify({ email: loginEmail, password: loginPassword, location })
       });
       
       if (!res.ok) {
@@ -395,11 +425,10 @@ export default function App() {
     }
   };
 
-
-
   // 2. Backend Logout (Records Server Authoritative Exit Timestamp & Concludes Single Daily Sheet)
   const handleLogout = async () => {
     let recordedTime = currentTimeStr;
+    const location = await getGpsLocation();
     try {
       if (currentUser) {
         const res = await fetch(`${API_BASE}/auth/logout`, {
@@ -407,7 +436,8 @@ export default function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             userId: currentUser.id,
-            logoutRemarks: logoutRemarks.trim()
+            logoutRemarks: logoutRemarks.trim(),
+            location
           })
         });
         const data = await res.json();
@@ -793,15 +823,12 @@ export default function App() {
                ── SIGN IN SCREEN (CENTERED WEB APP CARD) ──
                ═══════════════════════════════════════════════════════ */
             <div className="webapp-auth-center">
-              <div className="brand-top-header">
-                <div className="brand-emblem-badge">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2v4M4.93 10.93a7 7 0 1 0 9.9 0L12 8l-2.83 2.93z" />
-                    <path d="M9 18h6M10 22h4" />
-                  </svg>
-                </div>
-                <div className="brand-company-title">CA Buddy</div>
-                <div className="brand-company-tagline">Centralized Multi-Role Audit & Robot Vault</div>
+              <div className="brand-top-header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                <img 
+                  src="/calogo.png" 
+                  alt="CA Buddy Logo" 
+                  style={{ width: '80px', height: '80px', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
+                />
               </div>
 
 

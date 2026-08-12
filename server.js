@@ -374,7 +374,7 @@ function saveDb(data) {
 
 // 1. Auth Login (Captures Anti-Tamper Time on Server, supports admin/admin and any user credentials)
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, location } = req.body;
   const rawInput = (email || '').trim();
   const inputLower = rawInput.toLowerCase();
   const { timeStr, dateStr, isoStr } = getServerTimeDetails();
@@ -460,7 +460,8 @@ app.post('/api/auth/login', async (req, res) => {
     active: true,
     serverVerified: true,
     serverUtcIso: isoStr,
-    managerRemarks: `${user.roleTitle || user.role} active in portal.`
+    managerRemarks: `${user.roleTitle || user.role} active in portal.`,
+    loginLocation: location || null
   };
 
   db.attendance.unshift(activeLog);
@@ -478,7 +479,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 // 2. Auth Logout (Server-Authoritative Exit Timestamp & Updates Single Daily Duty Sheet)
 app.post('/api/auth/logout', async (req, res) => {
-  const { userId, logoutRemarks } = req.body;
+  const { userId, logoutRemarks, location } = req.body;
   const { timeStr, dateStr, isoStr } = getServerTimeDetails();
 
   const db = loadDb();
@@ -537,7 +538,8 @@ app.post('/api/auth/logout', async (req, res) => {
           timeWindow: `${rec.loginTime} - ${timeStr}`,
           duration: 'Session Completed',
           serverLogoutIso: isoStr,
-          managerRemarks: logoutRemarks || rec.managerRemarks || 'Logged out by user action.'
+          managerRemarks: logoutRemarks || rec.managerRemarks || 'Logged out by user action.',
+          logoutLocation: location || null
         };
       }
       return rec;
