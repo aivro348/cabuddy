@@ -28,14 +28,10 @@ const AUDITOR_ROLES = [
 
 // Predefined Audit Work Types for Daily Duty Reporting
 const AUDIT_WORK_TYPES = [
-  'Concurrent Audit',
-  'Internal Audit & Systems Review',
-  'Physical Inventory & Stock Verification',
-  'Revenue, Donation & Token Reconciliation',
-  'Tender, Bidder Envelope & Procurement Review',
-  'Voucher & Ledger Transaction Verification',
-  'Statutory & Regulatory Compliance Audit',
-  'Special Investigation / Surprise Inspection'
+  'Monthly Internal Audit',
+  'Quaterly Internal Audit',
+  'Half-Yearly Internal Audit',
+  'Clear selection'
 ];
 
 export default function App() {
@@ -62,6 +58,7 @@ export default function App() {
   const [dutySubmitSuccess, setDutySubmitSuccess] = useState(false);
   const [dutyVouchersVerified, setDutyVouchersVerified] = useState('');
   const [dutyActiveTab, setDutyActiveTab] = useState('sheet'); // 'sheet', 'records', 'all_users', 'all_reports', 'all_attendance', 'moms', 'tasks'
+  const [adminActiveTab, setAdminActiveTab] = useState('users');
 
   // ── Hub Active Section State ('entry' | 'logout' | 'moms' | 'tasks' | 'all_users') ──
   const [hubActiveSection, setHubActiveSection] = useState('entry');
@@ -796,17 +793,6 @@ export default function App() {
                     <span className="pulse-dot-live" style={{ background: '#FACC15', width: 6, height: 6, marginLeft: 2 }} />
                   )}
                 </button>
-
-                <button 
-                  className="dash-logout-corner" 
-                  onClick={handleLogout}
-                  title="End Session & Record Logout Timestamp"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                  </svg>
-                  <span>Log Out</span>
-                </button>
               </div>
             )}
           </div>
@@ -946,81 +932,111 @@ export default function App() {
                 <div className="hub-four-grid">
                   
                   {/* Box 1: Login Entry */}
-                  <div 
-                    className="hub-box-card box-entry"
-                    onClick={() => {
-                      setDashboardView('duty_entry');
-                      setDutyActiveTab('sheet');
-                      setHubActiveSection('entry');
-                    }}
-                  >
-                    <div className="hub-box-top">
-                      <div className="hub-box-icon" style={{ background: '#ECFDF5', color: '#047857' }}>📝</div>
-                      <span className="hub-box-badge" style={{ background: '#ECFDF5', color: '#047857' }}>10 PARAMS</span>
+                  {currentUser.role !== 'SUPER_ADMIN' && (
+                    <div 
+                      className="hub-box-card box-entry"
+                      onClick={() => {
+                        setDashboardView('duty_entry');
+                        setDutyActiveTab('sheet');
+                        setHubActiveSection('entry');
+                      }}
+                    >
+                      <div className="hub-box-top">
+                        <div className="hub-box-icon" style={{ background: '#ECFDF5', color: '#047857' }}>📝</div>
+                        <span className="hub-box-badge" style={{ background: '#ECFDF5', color: '#047857' }}>10 PARAMS</span>
+                      </div>
+                      <h4>1. Daily Duty Login Entry</h4>
+                      <p>Auto-captures server timestamp & submit 10-parameter daily audit questionnaire.</p>
+                      <button type="button" className="hub-box-action-btn">
+                        <span>📝 File Duty Entry →</span>
+                      </button>
                     </div>
-                    <h4>1. Daily Duty Login Entry</h4>
-                    <p>Auto-captures server timestamp & submit 10-parameter daily audit questionnaire.</p>
-                    <button type="button" className="hub-box-action-btn">
-                      <span>📝 File Duty Entry →</span>
-                    </button>
-                  </div>
+                  )}
 
                   {/* Box 2: Shift Logout Section */}
-                  <div 
-                    className="hub-box-card box-logout"
-                    onClick={() => {
-                      setDashboardView('shift_logout');
-                    }}
-                  >
-                    <div className="hub-box-top">
-                      <div className="hub-box-icon" style={{ background: '#FEF2F2', color: '#DC2626' }}>🔒</div>
-                      <span className="hub-box-badge" style={{ background: '#FEF2F2', color: '#DC2626' }}>SHIFT LOGOUT</span>
+                  {currentUser.role !== 'SUPER_ADMIN' && (
+                    <div 
+                      className="hub-box-card box-logout"
+                      onClick={() => {
+                        setDashboardView('shift_logout');
+                      }}
+                    >
+                      <div className="hub-box-top">
+                        <div className="hub-box-icon" style={{ background: '#FEF2F2', color: '#DC2626' }}>🔒</div>
+                        <span className="hub-box-badge" style={{ background: '#FEF2F2', color: '#DC2626' }}>SHIFT LOGOUT</span>
+                      </div>
+                      <h4>2. Shift Logout Section</h4>
+                      <p>Conclude daily shift, record verified server exit timestamp, and save day summary.</p>
+                      <button type="button" className="hub-box-action-btn">
+                        <span>⏱️ Shift Logout →</span>
+                      </button>
                     </div>
-                    <h4>2. Shift Logout Section</h4>
-                    <p>Conclude daily shift, record verified server exit timestamp, and save day summary.</p>
-                    <button type="button" className="hub-box-action-btn">
-                      <span>⏱️ Shift Logout →</span>
-                    </button>
-                  </div>
+                  )}
 
                   {/* Box 3: Minutes of Meeting (MOM) */}
-                  <div 
-                    className="hub-box-card box-mom"
-                    onClick={() => {
-                      setMomOrganizer(currentUser?.name || 'Demo Managing Partner');
-                      setMomActiveSubTab('basic');
-                      setDashboardView('mom_page');
-                    }}
-                  >
-                    <div className="hub-box-top">
-                      <div className="hub-box-icon" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>🏛️</div>
-                      <span className="hub-box-badge" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>{momsList.length} LOGGED</span>
+                  {currentUser.role !== 'SUPER_ADMIN' && (
+                    <div 
+                      className="hub-box-card box-mom"
+                      onClick={() => {
+                        setMomOrganizer(currentUser?.name || 'Demo Managing Partner');
+                        setMomActiveSubTab('basic');
+                        setDashboardView('mom_page');
+                      }}
+                    >
+                      <div className="hub-box-top">
+                        <div className="hub-box-icon" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>🏛️</div>
+                        <span className="hub-box-badge" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>{momsList.length} LOGGED</span>
+                      </div>
+                      <h4>3. Minutes of Meeting (MOM)</h4>
+                      <p>Record meeting details, agenda, decisions, and action items with deadlines.</p>
+                      <button type="button" className="hub-box-action-btn">
+                        <span>➕ Create / View MOM →</span>
+                      </button>
                     </div>
-                    <h4>3. Minutes of Meeting (MOM)</h4>
-                    <p>Record meeting details, agenda, decisions, and action items with deadlines.</p>
-                    <button type="button" className="hub-box-action-btn">
-                      <span>➕ Create / View MOM →</span>
-                    </button>
-                  </div>
+                  )}
 
                   {/* Box 4: Create New Task */}
-                  <div 
-                    className="hub-box-card box-task"
-                    onClick={() => {
-                      setNewTaskAssignedTo(currentUser?.name || 'Demo Managing Partner');
-                      setDashboardView('task_page');
-                    }}
-                  >
-                    <div className="hub-box-top">
-                      <div className="hub-box-icon" style={{ background: '#F5F3FF', color: '#7C3AED' }}>🎯</div>
-                      <span className="hub-box-badge" style={{ background: '#F5F3FF', color: '#7C3AED' }}>{tasksList.length} TASKS</span>
+                  {currentUser.role !== 'SUPER_ADMIN' && (
+                    <div 
+                      className="hub-box-card box-task"
+                      onClick={() => {
+                        setNewTaskAssignedTo(currentUser?.name || 'Demo Managing Partner');
+                        setDashboardView('task_page');
+                      }}
+                    >
+                      <div className="hub-box-top">
+                        <div className="hub-box-icon" style={{ background: '#F5F3FF', color: '#7C3AED' }}>🎯</div>
+                        <span className="hub-box-badge" style={{ background: '#F5F3FF', color: '#7C3AED' }}>{tasksList.length} TASKS</span>
+                      </div>
+                      <h4>4. Create New Task</h4>
+                      <p>Create tasks for yourself or assign audit tasks to team members with priorities.</p>
+                      <button type="button" className="hub-box-action-btn">
+                        <span>➕ Create / Assign Task →</span>
+                      </button>
                     </div>
-                    <h4>4. Create New Task</h4>
-                    <p>Create tasks for yourself or assign audit tasks to team members with priorities.</p>
-                    <button type="button" className="hub-box-action-btn">
-                      <span>➕ Create / Assign Task →</span>
-                    </button>
-                  </div>
+                  )}
+
+                  {/* Box 5: Admin Control Center (Only visible to SUPER_ADMIN) */}
+                  {currentUser.role === 'SUPER_ADMIN' && (
+                    <div 
+                      className="hub-box-card box-admin"
+                      style={{ border: '2px solid #FACC15', background: '#FFFDF0', cursor: 'pointer', gridColumn: 'span 2', maxWidth: '500px', margin: '0 auto' }}
+                      onClick={() => {
+                        setDashboardView('admin_panel');
+                        setAdminActiveTab('users');
+                      }}
+                    >
+                      <div className="hub-box-top">
+                        <div className="hub-box-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>👑</div>
+                        <span className="hub-box-badge" style={{ background: '#FEF3C7', color: '#D97706' }}>ADMIN PORTAL</span>
+                      </div>
+                      <h4>Master Admin Control Center</h4>
+                      <p>Full overview of users, real-time GPS attendance logs, daily reports, MOMs, and system tasks.</p>
+                      <button type="button" className="hub-box-action-btn" style={{ background: '#D97706', borderColor: '#FACC15', color: '#FFFFFF' }}>
+                        <span>👑 Open Control Panel →</span>
+                      </button>
+                    </div>
+                  )}
 
                 </div>
 
@@ -1712,7 +1728,14 @@ export default function App() {
                       <select 
                         className="duty-select-box"
                         value={dutyAuditWorkType}
-                        onChange={(e) => setDutyAuditWorkType(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'Clear selection') {
+                            setDutyAuditWorkType('');
+                          } else {
+                            setDutyAuditWorkType(val);
+                          }
+                        }}
                         required
                       >
                         <option value="">-- Select Audit Work Type --</option>
@@ -2257,7 +2280,382 @@ export default function App() {
               </div>
             )}
 
+            {/* ═══════════════════════════════════════════════════════
+               ── PAGE: MASTER ADMIN CONTROL CENTER (FULL PAGE VIEW) ──
+               ═══════════════════════════════════════════════════════ */}
+            {dashboardView === 'admin_panel' && currentUser?.role === 'SUPER_ADMIN' && (
+              <div className="dedicated-page-view page-admin" style={{ animation: 'slideInPage 0.3s ease' }}>
+                
+                {/* Page Header */}
+                <div className="page-view-header">
+                  <button 
+                    type="button" 
+                    className="page-back-btn"
+                    onClick={() => setDashboardView('hub')}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 12H5"/>
+                      <path d="M12 19l-7-7 7-7"/>
+                    </svg>
+                    <span>Back to Dashboard</span>
+                  </button>
+                  <div className="page-view-title-group">
+                    <div className="page-view-icon" style={{ background: '#FFFDF0', color: '#D97706', border: '1px solid #FACC15' }}>👑</div>
+                    <div>
+                      <h3 className="page-view-title">Master Admin Control Center</h3>
+                      <p className="page-view-subtitle">Central Audit Apex Command • Live System Data Feeds & GPS Verification Stamps</p>
+                    </div>
+                  </div>
+                  <div className="page-view-badges" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <div className="duty-live-badge" style={{ background: '#FFFDF0', color: '#D97706', borderColor: '#FACC15' }}>
+                      <span className="pulse-dot-live" style={{ background: '#D97706' }}></span>
+                      SECURE SYSTEM APEX
+                    </div>
+                    <button 
+                      type="button"
+                      className="dash-logout-corner"
+                      onClick={handleLogout}
+                      style={{ background: '#FEF2F2', border: '1.5px solid #FCA5A5', color: '#DC2626', padding: '0.4rem 0.85rem', borderRadius: '10px', fontSize: '0.725rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                      </svg>
+                      <span>Admin Logout</span>
+                    </button>
+                  </div>
+                </div>
 
+                {/* KPI Metrics Summary Bar */}
+                <div className="super-kpi-grid" style={{ marginBottom: '1.75rem' }}>
+                  <div className="super-kpi-card">
+                    <div className="super-kpi-icon" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>👥</div>
+                    <div>
+                      <span className="kpi-label">Registered Staff</span>
+                      <div className="kpi-value">{usersDb.length} Users</div>
+                    </div>
+                  </div>
+
+                  <div className="super-kpi-card">
+                    <div className="super-kpi-icon" style={{ background: '#ECFDF5', color: '#047857' }}>🟢</div>
+                    <div>
+                      <span className="kpi-label">Active Shifts Now</span>
+                      <div className="kpi-value" style={{ color: '#047857' }}>
+                        {attendanceLedger.filter(a => a.active).length} On-Duty
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="super-kpi-card">
+                    <div className="super-kpi-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>📝</div>
+                    <div>
+                      <span className="kpi-label">Total Daily Reports</span>
+                      <div className="kpi-value">{dutySubmittedReports.length} Submitted</div>
+                    </div>
+                  </div>
+
+                  <div className="super-kpi-card">
+                    <div className="super-kpi-icon" style={{ background: '#F5F3FF', color: '#7C3AED' }}>🎯</div>
+                    <div>
+                      <span className="kpi-label">System Tasks</span>
+                      <div className="kpi-value">{tasksList.length} Tasks</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tab Strip Navigation */}
+                <div className="mom-tabs-segmented" style={{ marginBottom: '1.5rem' }}>
+                  <button type="button" className={`mom-tab-item ${adminActiveTab === 'users' ? 'active' : ''}`} onClick={() => setAdminActiveTab('users')}>
+                    👥 User Directory ({usersDb.length})
+                  </button>
+                  <button type="button" className={`mom-tab-item ${adminActiveTab === 'reports' ? 'active' : ''}`} onClick={() => setAdminActiveTab('reports')}>
+                    📋 Daily Reports Ledger ({dutySubmittedReports.length})
+                  </button>
+                  <button type="button" className={`mom-tab-item ${adminActiveTab === 'attendance' ? 'active' : ''}`} onClick={() => setAdminActiveTab('attendance')}>
+                    📍 GPS Attendance Tracker ({attendanceLedger.length})
+                  </button>
+                  <button type="button" className={`mom-tab-item ${adminActiveTab === 'moms' ? 'active' : ''}`} onClick={() => setAdminActiveTab('moms')}>
+                    🏛️ Meeting Minutes ({momsList.length})
+                  </button>
+                  <button type="button" className={`mom-tab-item ${adminActiveTab === 'tasks' ? 'active' : ''}`} onClick={() => setAdminActiveTab('tasks')}>
+                    🎯 Task Assignments ({tasksList.length})
+                  </button>
+                </div>
+
+                {/* Content Sections based on AdminActiveTab */}
+                <div className="admin-tab-content-wrapper" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: '18px', padding: '1.5rem' }}>
+                  
+                  {/* Sub-tab 1: Users Directory */}
+                  {adminActiveTab === 'users' && (
+                    <div style={{ animation: 'slideInPage 0.2s ease' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '850', color: '#0F172A' }}>👥 System User Directory</h4>
+                        <span style={{ fontSize: '0.725rem', color: '#64748B' }}>Total registered multi-role users</span>
+                      </div>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table className="super-admin-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                          <thead>
+                            <tr style={{ background: '#EEF2F6', borderBottom: '1.5px solid #E2E8F0' }}>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Name</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Email / Login ID</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Assigned Unit</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Role Title</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Supervisor</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {usersDb.map((user) => {
+                              const isActive = attendanceLedger.some(a => a.userId === user.id && a.active);
+                              const supervisor = user.managedBy ? (usersDb.find(m => m.id === user.managedBy)?.name || 'Audit Manager') : 'Executive Apex Admin';
+                              return (
+                                <tr key={user.id} style={{ borderBottom: '1px solid #E2E8F0', background: 'white' }}>
+                                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', fontWeight: '700', color: '#0F172A' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                      <span>{user.name || 'Unnamed staff'}</span>
+                                      {isActive && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} title="Active On-Duty" />}
+                                    </div>
+                                  </td>
+                                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', color: '#475569', fontFamily: 'monospace' }}>{user.email}</td>
+                                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#475569' }}>{user.unit}</td>
+                                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', fontWeight: '700', color: '#1E293B' }}>
+                                    <span style={{ 
+                                      background: user.role === 'SUPER_ADMIN' ? '#FEF3C7' : (user.role === 'MANAGER' ? '#EFF6FF' : '#F1F5F9'),
+                                      color: user.role === 'SUPER_ADMIN' ? '#B45309' : (user.role === 'MANAGER' ? '#1D4ED8' : '#475569'),
+                                      padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.675rem', fontWeight: '800'
+                                    }}>
+                                      {user.roleTitle || user.role}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#64748B' }}>{supervisor}</td>
+                                  <td style={{ padding: '0.85rem 1rem' }}>
+                                    <button 
+                                      type="button" 
+                                      className="btn-card-edit-role"
+                                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.7rem' }}
+                                      onClick={() => setSelectedUserDetailModal(user)}
+                                    >
+                                      🔎 View Details
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-tab 2: Daily Reports Ledger */}
+                  {adminActiveTab === 'reports' && (
+                    <div style={{ animation: 'slideInPage 0.2s ease' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '850', color: '#0F172A' }}>📋 Daily Duty Reports Ledger</h4>
+                        <span style={{ fontSize: '0.725rem', color: '#64748B' }}>10-parameter daily logs filed by articled assistants</span>
+                      </div>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table className="super-admin-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                          <thead>
+                            <tr style={{ background: '#EEF2F6', borderBottom: '1.5px solid #E2E8F0' }}>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Name / Reg No</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Assigned Unit</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Audit Category</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Vouchers</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Work Description</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>CA Remarks</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Verification</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {dutySubmittedReports.map((rep) => (
+                              <tr key={rep.id || Math.random()} style={{ borderBottom: '1px solid #E2E8F0', background: 'white' }}>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.775rem', fontWeight: '700', color: '#0F172A' }}>
+                                  <div>{rep.fullName}</div>
+                                  <div style={{ fontSize: '0.675rem', color: '#64748B', fontWeight: '500' }}>{rep.studentRegNo}</div>
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#475569' }}>{rep.unitDetails}</td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#475569' }}>{rep.auditWorkType}</td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', fontWeight: '800', color: '#0F172A' }}>{rep.vouchersVerified || '0'} docs</td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#475569', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={rep.workObjective}>
+                                  {rep.workObjective}
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#D97706', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={rep.caRemarks}>
+                                  {rep.caRemarks}
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.7rem' }}>
+                                  <span style={{ 
+                                    background: rep.status?.includes('COMPLETED') ? '#ECFDF5' : '#EFF6FF',
+                                    color: rep.status?.includes('COMPLETED') ? '#047857' : '#1D4ED8',
+                                    padding: '0.2rem 0.5rem', borderRadius: '6px', fontWeight: '800'
+                                  }}>
+                                    {rep.status || 'SUBMITTED'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                            {dutySubmittedReports.length === 0 && (
+                              <tr>
+                                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748B', fontSize: '0.775rem' }}>No daily reports logged yet.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-tab 3: GPS Attendance Tracker */}
+                  {adminActiveTab === 'attendance' && (
+                    <div style={{ animation: 'slideInPage 0.2s ease' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '850', color: '#0F172A' }}>📍 Real-Time GPS Attendance & Punch Logs</h4>
+                        <span style={{ fontSize: '0.725rem', color: '#64748B' }}>Auto-stamped logs containing captured latitude and longitude</span>
+                      </div>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table className="super-admin-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                          <thead>
+                            <tr style={{ background: '#EEF2F6', borderBottom: '1.5px solid #E2E8F0' }}>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Date</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Staff Member</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Assigned Unit</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Punch-In / Punch-Out</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>GPS Login Stamp</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>GPS Logout Stamp</th>
+                              <th style={{ padding: '0.75rem 1rem', fontSize: '0.725rem', fontWeight: '850', color: '#475569' }}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {attendanceLedger.map((rec) => (
+                              <tr key={rec.id} style={{ borderBottom: '1px solid #E2E8F0', background: 'white' }}>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.775rem', fontWeight: '700', color: '#0F172A' }}>{rec.date}</td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.775rem', fontWeight: '700', color: '#0F172A' }}>{rec.userName}</td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#475569' }}>{rec.unit}</td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: '#1E293B', fontWeight: '600' }}>
+                                  ⏱️ In: {rec.loginTime || '--'} <br />
+                                  🔒 Out: {rec.logoutTime || 'Active session'}
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.7rem', color: '#047857', fontFamily: 'monospace' }}>
+                                  {rec.loginLocation ? (
+                                    <>
+                                      🛰️ Lat: {rec.loginLocation.latitude.toFixed(6)} <br />
+                                      Lon: {rec.loginLocation.longitude.toFixed(6)} <br />
+                                      <span style={{ color: '#059669', fontSize: '0.625rem', fontWeight: '800' }}>[Acc: ±{rec.loginLocation.accuracy.toFixed(1)}m]</span>
+                                    </>
+                                  ) : (
+                                    <span style={{ color: '#94A3B8' }}>No GPS capture</span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.7rem', color: '#991B1B', fontFamily: 'monospace' }}>
+                                  {rec.logoutLocation ? (
+                                    <>
+                                      🛰️ Lat: {rec.logoutLocation.latitude.toFixed(6)} <br />
+                                      Lon: {rec.logoutLocation.longitude.toFixed(6)} <br />
+                                      <span style={{ color: '#B91C1C', fontSize: '0.625rem', fontWeight: '800' }}>[Acc: ±{rec.logoutLocation.accuracy.toFixed(1)}m]</span>
+                                    </>
+                                  ) : (
+                                    <span style={{ color: '#94A3B8' }}>{rec.active ? 'Session Active' : 'No GPS capture'}</span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', fontSize: '0.7rem' }}>
+                                  <span style={{ 
+                                    background: rec.active ? '#ECFDF5' : '#F1F5F9',
+                                    color: rec.active ? '#047857' : '#475569',
+                                    padding: '0.2rem 0.5rem', borderRadius: '6px', fontWeight: '800'
+                                  }}>
+                                    {rec.active ? '🟢 ACTIVE' : '🔒 CLOSED'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-tab 4: MOM History */}
+                  {adminActiveTab === 'moms' && (
+                    <div style={{ animation: 'slideInPage 0.2s ease' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '850', color: '#0F172A' }}>🏛️ Minutes of Meetings (MOM) History</h4>
+                        <span style={{ fontSize: '0.725rem', color: '#64748B' }}>Audit review and management debrief logs</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.85rem' }}>
+                        {momsList.map((m) => (
+                          <div key={m.id} style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '1.25rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <div>
+                                <strong style={{ fontSize: '0.9rem', color: '#0F172A' }}>{m.title}</strong>
+                                <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                                  📅 {m.date} at {m.time} • 📍 {m.location}
+                                </div>
+                              </div>
+                              <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.675rem', fontWeight: '800' }}>
+                                {m.type}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.775rem', color: '#334155', marginTop: '0.5rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.5rem' }}>
+                              <strong>Organizer:</strong> {m.organizer} | <strong>Attendees:</strong> {m.attendees || 'None specified'}
+                            </div>
+                            {m.agenda && (
+                              <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.4rem' }}>
+                                <strong>Agenda:</strong> {m.agenda}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {momsList.length === 0 && (
+                          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748B', fontSize: '0.775rem' }}>No meetings logged yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-tab 5: Task Assignments */}
+                  {adminActiveTab === 'tasks' && (
+                    <div style={{ animation: 'slideInPage 0.2s ease' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '850', color: '#0F172A' }}>🎯 Master Task Assignments & Priorities</h4>
+                        <span style={{ fontSize: '0.725rem', color: '#64748B' }}>Audit milestones and work objectives assigned to staff</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.85rem' }}>
+                        {tasksList.map((t) => (
+                          <div key={t.id} style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '1.25rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <div>
+                                <strong style={{ fontSize: '0.9rem', color: '#0F172A' }}>{t.title}</strong>
+                                <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                                  📂 {t.category} • Assigned to: <span style={{ fontWeight: '700', color: '#1E293B' }}>{t.assignedTo}</span>
+                                </div>
+                              </div>
+                              <span style={{ 
+                                background: t.priority === 'High Priority' || t.priority === 'Urgent / Critical' ? '#FEF2F2' : '#ECFDF5',
+                                color: t.priority === 'High Priority' || t.priority === 'Urgent / Critical' ? '#DC2626' : '#047857',
+                                padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.675rem', fontWeight: '800'
+                              }}>
+                                {t.priority}
+                              </span>
+                            </div>
+                            {t.description && (
+                              <p style={{ fontSize: '0.75rem', color: '#475569', margin: '0.5rem 0' }}>{t.description}</p>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                              <span>🏢 Project: {t.project || 'General'}</span>
+                              <strong>📅 Due: {t.dueDate || 'No deadline'}</strong>
+                            </div>
+                          </div>
+                        ))}
+                        {tasksList.length === 0 && (
+                          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748B', fontSize: '0.775rem' }}>No tasks created yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+              </div>
+            )}
           </div>
         )}
 

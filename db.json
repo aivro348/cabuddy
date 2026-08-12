@@ -177,6 +177,179 @@
   ],
   "attendance": [
     {
+      "id": "log-1786556738869",
+      "userId": "usr-3",
+      "userName": "Ravi Teja, Field Auditor",
+      "userEmail": "auditor@eluc",
+      "managerId": "usr-2",
+      "roleTitle": "Field Auditor",
+      "unit": "Procurement [Marketing Department]",
+      "loginTime": "11:15:38 PM",
+      "logoutTime": null,
+      "date": "12 Aug 2026",
+      "timeWindow": "11:15:38 PM - Active",
+      "duration": "Session Active",
+      "active": true,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T17:45:38.861Z",
+      "managerRemarks": "Field Auditor active in portal.",
+      "loginLocation": {
+        "latitude": 13.631591447944658,
+        "longitude": 79.47370711190061,
+        "accuracy": 114.30715624346541
+      }
+    },
+    {
+      "id": "log-1786556526758",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "11:12:06 PM",
+      "logoutTime": null,
+      "date": "12 Aug 2026",
+      "timeWindow": "11:12:06 PM - Active",
+      "duration": "Session Active",
+      "active": true,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T17:42:06.753Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631973774475403,
+        "longitude": 79.4742483369676,
+        "accuracy": 76
+      }
+    },
+    {
+      "id": "log-1786555728292",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "10:58:48 PM",
+      "logoutTime": "11:12:06 PM",
+      "date": "12 Aug 2026",
+      "timeWindow": "10:58:48 PM - Active",
+      "duration": "Auto closed on new login",
+      "active": false,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T17:28:48.288Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631500277302308,
+        "longitude": 79.47477433391147,
+        "accuracy": 134.66666666666666
+      }
+    },
+    {
+      "id": "log-1786555619546",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "10:56:59 PM",
+      "logoutTime": "10:58:43 PM",
+      "date": "12 Aug 2026",
+      "timeWindow": "10:56:59 PM - 10:58:43 PM",
+      "duration": "Session Completed",
+      "active": false,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T17:26:59.531Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631878493025493,
+        "longitude": 79.47516130224894,
+        "accuracy": 56
+      },
+      "serverLogoutIso": "2026-08-12T17:28:43.166Z",
+      "logoutLocation": {
+        "latitude": 13.631874369385862,
+        "longitude": 79.4751569450509,
+        "accuracy": 56
+      }
+    },
+    {
+      "id": "log-1786555574604",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "09:00:00 AM",
+      "logoutTime": "10:56:14 PM",
+      "date": "12 Aug 2026",
+      "timeWindow": "09:00 AM - 10:56:14 PM",
+      "duration": "Session Closed",
+      "active": false,
+      "serverVerified": true,
+      "managerRemarks": "Logged out by user action."
+    },
+    {
+      "id": "log-1786555409128",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "10:53:29 PM",
+      "logoutTime": "10:56:12 PM",
+      "date": "12 Aug 2026",
+      "timeWindow": "10:53:29 PM - 10:56:12 PM",
+      "duration": "Session Completed",
+      "active": false,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T17:23:29.118Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631877155292889,
+        "longitude": 79.4751597667539,
+        "accuracy": 56
+      },
+      "serverLogoutIso": "2026-08-12T17:26:12.584Z",
+      "logoutLocation": {
+        "latitude": 13.63186126758498,
+        "longitude": 79.47481874030181,
+        "accuracy": 75
+      }
+    },
+    {
+      "id": "log-1786555159030",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "10:49:18 PM",
+      "logoutTime": "10:49:54 PM",
+      "date": "12 Aug 2026",
+      "timeWindow": "10:49:18 PM - 10:49:54 PM",
+      "duration": "Session Completed",
+      "active": false,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T17:19:18.966Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631861751299398,
+        "longitude": 79.47433760141276,
+        "accuracy": 75
+      },
+      "serverLogoutIso": "2026-08-12T17:19:54.982Z",
+      "logoutLocation": {
+        "latitude": 13.63150305232505,
+        "longitude": 79.47477726843576,
+        "accuracy": 134.66666666666666
+      }
+    },
+    {
       "id": "log-1786555013161",
       "userId": "usr-1",
       "userName": "Executive Super Admin",
@@ -2036,12 +2209,12 @@
       "targetToAchieve": "Standard compliance verified",
       "caRemarks": "",
       "pocName": "Duty Officer",
-      "logoutTime": "10:46:53 PM",
+      "logoutTime": "10:58:43 PM",
       "logoutRemarks": "Standard evening shift conclusion",
       "status": "COMPLETED & VERIFIED",
       "date": "12 Aug 2026",
       "createdAt": "2026-08-12T17:16:50.286Z",
-      "concludedAt": "2026-08-12T17:16:53.158Z"
+      "concludedAt": "2026-08-12T17:28:43.166Z"
     }
   ]
 }
