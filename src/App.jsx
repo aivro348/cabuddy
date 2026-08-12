@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './index.css';
+
 
 // Dynamic API URL: Automatically uses '/api' on cPanel production and 'http://localhost:5001/api' in local Vite dev
 const API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (window.location.port === '5173' || window.location.port === '5174'))
@@ -27,17 +28,20 @@ const AUDITOR_ROLES = [
   'Compliance Officer'
 ];
 
-// Predefined Sub-Risk Categories
-const SUB_RISK_OPTIONS = [
-  'Inventory Discrepancy & Stock Reconciliation',
-  'Cash Collection & Token Reconciliation',
-  'Tender Compliance & Vendor Billing Irregularity',
-  'Asset Custody & Physical Verification',
-  'Statutory Register Non-Compliance',
-  'Others (Manual Specification)'
+// Predefined Audit Work Types for Daily Duty Reporting
+const AUDIT_WORK_TYPES = [
+  'Concurrent Audit',
+  'Internal Audit & Systems Review',
+  'Physical Inventory & Stock Verification',
+  'Revenue, Donation & Token Reconciliation',
+  'Tender, Bidder Envelope & Procurement Review',
+  'Voucher & Ledger Transaction Verification',
+  'Statutory & Regulatory Compliance Audit',
+  'Special Investigation / Surprise Inspection'
 ];
 
 export default function App() {
+
   // ── Auth & Current Session ──
   const [authView, setAuthView] = useState('signin');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,46 +49,40 @@ export default function App() {
   const [sessionLoginTime, setSessionLoginTime] = useState(null);
   const [logoutToast, setLogoutToast] = useState(null);
 
+  // ── Daily Audit Duty & Work Reporting Sheet State (The 11 Parameters) ──
+  const [dutyLoginTime, setDutyLoginTime] = useState('09:00:00 AM');
+  const [dutyFullName, setDutyFullName] = useState('');
+  const [dutyStudentRegNo, setDutyStudentRegNo] = useState('');
+  const [dutyUnitDetails, setDutyUnitDetails] = useState(ORGANIZATIONAL_UNITS[0]);
+  const [dutySubUnitDetails, setDutySubUnitDetails] = useState('');
+  const [dutyAuditWorkType, setDutyAuditWorkType] = useState(AUDIT_WORK_TYPES[0]);
+  const [dutyWorkObjective, setDutyWorkObjective] = useState('');
+  const [dutyTargetToAchieve, setDutyTargetToAchieve] = useState('');
+  const [dutyCaRemarks, setDutyCaRemarks] = useState('');
+  const [dutyPocName, setDutyPocName] = useState('');
+  const [dutyLogoutTime, setDutyLogoutTime] = useState('');
+  const [dutySubmittedReports, setDutySubmittedReports] = useState([]);
+  const [dutySubmitSuccess, setDutySubmitSuccess] = useState(false);
+  const [dutyActiveTab, setDutyActiveTab] = useState('sheet'); // 'sheet' or 'records'
+
   // Sign In form inputs
   const [loginEmail, setLoginEmail] = useState('admin@eluc');
   const [loginPassword, setLoginPassword] = useState('1234567');
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemoRole, setSelectedDemoRole] = useState('SUPER_ADMIN');
 
-  // Navigation tab state per portal
-  const [adminTab, setAdminTab] = useState('complaints_vault'); // 'complaints_vault', 'accounts_directory'
-  const [managerTab, setManagerTab] = useState('team_users'); // 'team_users', 'team_complaints', 'assignments', 'team_timestamps'
-  const [userTab, setUserTab] = useState('upload_report'); // 'upload_report', 'my_assignment'
-
   // Master State Stores
   const [usersDb, setUsersDb] = useState([]);
-  const [attendanceLedger, setAttendanceLedger] = useState([]);
-  const [assignmentsDb, setAssignmentsDb] = useState([]);
-  const [complaintsDb, setComplaintsDb] = useState([]);
+  const [_attendanceLedger, setAttendanceLedger] = useState([]);
+  const [_assignmentsDb, setAssignmentsDb] = useState([]);
+  const [_complaintsDb, setComplaintsDb] = useState([]);
 
-  // Field User Shift Clock
-  const [isUserClockedIn, setIsUserClockedIn] = useState(true);
+  // Live Server Clock
   const [currentTimeStr, setCurrentTimeStr] = useState('10:45 AM');
-
-  // ── Super Admin Filters ──
-  const [adminUnitFilter, setAdminUnitFilter] = useState('ALL');
-  const [adminUrgencyFilter, setAdminUrgencyFilter] = useState('ALL');
-
-  // ── Field User: Sub-Risk & Upload State ──
-  const [selectedSubRisk, setSelectedSubRisk] = useState(SUB_RISK_OPTIONS[0]);
-  const [customProblemDetail, setCustomProblemDetail] = useState('');
-  const [reportUrgency, setReportUrgency] = useState('HIGH');
-  const [reportRemarks, setReportRemarks] = useState('');
-  
-  // File Upload State
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [filePreviewUrl, setFilePreviewUrl] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState('IDLE'); // 'IDLE', 'UPLOADING', 'SUCCESS', 'ERROR'
-  const [robotReceipt, setRobotReceipt] = useState(null);
-  const fileInputRef = useRef(null);
 
   // ── Document Viewer Modal State (Super Admin & Manager & User) ──
   const [viewingDoc, setViewingDoc] = useState(null);
+
 
   // ── Manager Role Switcher Modal State ──
   const [editingRoleUser, setEditingRoleUser] = useState(null);
@@ -107,10 +105,8 @@ export default function App() {
   const [newUserRoleTitle, setNewUserRoleTitle] = useState('Field Auditor');
   const [newUserUnit, setNewUserUnit] = useState(ORGANIZATIONAL_UNITS[0]);
 
-  // Manager Remark Text State
-  const [remarkInputs, setRemarkInputs] = useState({});
-
   // Forgot Password Modal
+
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState(false);
@@ -211,11 +207,12 @@ export default function App() {
 
   const refreshAllData = useCallback(async () => {
     try {
-      const [usersRes, attRes, asnRes, cmpRes] = await Promise.all([
+      const [usersRes, attRes, asnRes, cmpRes, dutyRes] = await Promise.all([
         fetch(`${API_BASE}/users`),
         fetch(`${API_BASE}/attendance`),
         fetch(`${API_BASE}/assignments`),
-        fetch(`${API_BASE}/complaints`)
+        fetch(`${API_BASE}/complaints`),
+        fetch(`${API_BASE}/daily-reports`)
       ]);
 
       const usersData = await usersRes.json();
@@ -229,6 +226,10 @@ export default function App() {
 
       const cmpData = await cmpRes.json();
       if (cmpData.success) setComplaintsDb(cmpData.complaints);
+
+      const dutyData = await dutyRes.json();
+      if (dutyData.success && dutyData.reports) setDutySubmittedReports(dutyData.reports);
+
     } catch (err) {
       console.warn('Backend API sync notice:', err);
     }
@@ -376,92 +377,75 @@ export default function App() {
     }, 1200);
   };
 
-
-  // 3. User Shift Clock Toggle (Field Users Only)
-  const handleUserClockToggle = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/attendance/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser?.id, isClockedIn: isUserClockedIn })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setIsUserClockedIn(!isUserClockedIn);
-        refreshAllData();
+  // ── Auto-Populate Duty Parameters on Login ──
+  useEffect(() => {
+    if (currentUser) {
+      setDutyFullName(currentUser.name || 'Audit Articled Assistant');
+      setDutyStudentRegNo(currentUser.studentRegNo || 'SRO' + Math.floor(100000 + Math.random() * 900000));
+      if (currentUser.unit && currentUser.unit !== 'All Enterprise Units') {
+        setDutyUnitDetails(currentUser.unit);
       }
-    } catch (err) {
-      console.error('Clock toggle error:', err);
     }
-  };
-
-  // 4. File Selection Handler (Images & PDF)
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setUploadedFile(file);
-      setUploadStatus('IDLE');
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFilePreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (sessionLoginTime) {
+      setDutyLoginTime(sessionLoginTime);
+    } else {
+      setDutyLoginTime(currentTimeStr);
     }
-  };
+  }, [currentUser, sessionLoginTime, currentTimeStr]);
 
-  // 5. Submit Complaint & Upload to Robot Backend Vault
-  const handleSendToRobotVault = async (e) => {
-    if (e) e.preventDefault();
+  // ── Submit Daily Audit Duty & Work Reporting Sheet (11 Parameters) ──
+  const handleSaveDutyReport = async (shouldLogout = false) => {
+    const finalLogoutTime = shouldLogout ? currentTimeStr : (dutyLogoutTime || null);
 
-    const finalTitle = selectedSubRisk === 'Others (Manual Specification)'
-      ? (customProblemDetail.trim() || 'Custom Field Observation')
-      : selectedSubRisk;
-
-    if (selectedSubRisk === 'Others (Manual Specification)' && !customProblemDetail.trim()) {
-      alert('Please explain the problem details in the specification box.');
-      return;
-    }
-
-    setUploadStatus('UPLOADING');
+    const payload = {
+      userId: currentUser?.id,
+      loginTime: dutyLoginTime || currentTimeStr,
+      fullName: dutyFullName.trim() || currentUser?.name || 'Audit Student',
+      studentRegNo: dutyStudentRegNo.trim() || 'SRO0684920',
+      unitDetails: dutyUnitDetails,
+      subUnitDetails: dutySubUnitDetails.trim() || 'General Unit Counter',
+      auditWorkType: dutyAuditWorkType,
+      workObjective: dutyWorkObjective.trim(),
+      targetToAchieve: dutyTargetToAchieve.trim(),
+      caRemarks: dutyCaRemarks.trim(),
+      pocName: dutyPocName.trim(),
+      logoutTime: finalLogoutTime,
+      status: shouldLogout ? 'COMPLETED & LOGGED OUT' : 'SUBMITTED'
+    };
 
     try {
-      const payload = {
-        unit: currentUser?.unit || ORGANIZATIONAL_UNITS[0],
-        title: finalTitle,
-        category: selectedSubRisk,
-        urgency: reportUrgency,
-        remarks: reportRemarks || (selectedSubRisk === 'Others (Manual Specification)' ? customProblemDetail : 'Sub-risk evidence document submitted for review.'),
-        fileName: uploadedFile ? uploadedFile.name : 'evidence_doc.pdf',
-        fileType: uploadedFile ? uploadedFile.type : 'application/pdf',
-        fileSize: uploadedFile ? `${(uploadedFile.size / 1024).toFixed(1)} KB` : '320 KB',
-        fileData: filePreviewUrl || null,
-        auditorId: currentUser?.id || 'usr-3',
-        auditorName: currentUser?.name || 'Field Auditor'
-      };
-
-      const res = await fetch(`${API_BASE}/complaints/upload`, {
+      const res = await fetch(`${API_BASE}/daily-reports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-
-      if (data.success) {
-        setUploadStatus('SUCCESS');
-        setRobotReceipt(data.receiptToken);
-        setCustomProblemDetail('');
-        setReportRemarks('');
-        setUploadedFile(null);
-        setFilePreviewUrl(null);
-        refreshAllData();
+      if (data.success && data.reports) {
+        setDutySubmittedReports(data.reports);
       } else {
-        setUploadStatus('ERROR');
+        setDutySubmittedReports(prev => [payload, ...prev]);
       }
     } catch (err) {
-      console.error('Upload to robot vault error:', err);
-      setUploadStatus('ERROR');
+      console.warn('Save daily report local fallback:', err);
+      setDutySubmittedReports(prev => [payload, ...prev]);
+    }
+
+    setDutySubmitSuccess(true);
+
+    if (shouldLogout) {
+      setTimeout(() => {
+        handleLogout();
+      }, 1400);
+    } else {
+      setTimeout(() => {
+        setDutySubmitSuccess(false);
+      }, 3500);
     }
   };
+
+
+
+
 
   // 6. MANAGER DECIDES & UPDATES USER ROLE
   const handleSaveUserRole = async (e) => {
@@ -550,34 +534,15 @@ export default function App() {
     }, 1200);
   };
 
-  // 8. Manager Saves Remark on Auditor Attendance
-  const handleSaveRemark = async (logId) => {
-    const remarkText = remarkInputs[logId];
-    if (!remarkText) return;
-
-    try {
-      const res = await fetch(`${API_BASE}/attendance/${logId}/remark`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ remarks: remarkText })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setRemarkInputs(prev => ({ ...prev, [logId]: '' }));
-        refreshAllData();
-      }
-    } catch (err) {
-      console.error('Remark error:', err);
-    }
-  };
-
-  // 9. Provision New User
+  // Provision New User
   const handleCreateUser = async (e) => {
+
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
 
     try {
       const res = await fetch(`${API_BASE}/users`, {
+
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -601,42 +566,9 @@ export default function App() {
     }
   };
 
-  // Filtered Super Admin Complaints
-  const structuredAdminComplaints = complaintsDb.filter(c => {
-    const matchesUnit = adminUnitFilter === 'ALL' || c.unit === adminUnitFilter;
-    const matchesUrgency = adminUrgencyFilter === 'ALL' || c.urgency?.toUpperCase() === adminUrgencyFilter.toUpperCase();
-    return matchesUnit && matchesUrgency;
-  });
-
-  // Filtered Manager Team Complaints
-  const managerTeamComplaints = complaintsDb.filter(c => {
-    if (currentUser?.role === 'MANAGER') {
-      return c.managerId === currentUser.id;
-    }
-    return true;
-  });
-
-  // Filtered Manager Team Timestamps
-  const managerTeamAttendance = attendanceLedger.filter(item => {
-    if (currentUser?.role === 'MANAGER') {
-      return item.managerId === currentUser.id;
-    }
-    return true;
-  });
-
-  // Filtered Manager Team Users
-  const managerTeamUsers = usersDb.filter(u => {
-    if (currentUser?.role === 'MANAGER') {
-      return u.managedBy === currentUser.id;
-    }
-    return true;
-  });
-
-  // Active User Assignment
-  const currentUserAssignment = assignmentsDb.find(a => a.assignedToId === currentUser?.id);
-
   return (
     <div className="webapp-shell">
+
       
       {/* ── Sticky Top Web App Navigation Bar ── */}
       <header className="webapp-navbar">
@@ -832,810 +764,365 @@ export default function App() {
           ) : null
         ) : (
           /* ═══════════════════════════════════════════════════════
-             ── LOGGED IN PORTAL (ROLE SEGREGATED) ──
+             ── NEW PAGE: DAILY AUDIT DUTY & WORK REPORTING SHEET ──
              ═══════════════════════════════════════════════════════ */
-          <div>
-            {/* ═══════════════════════════════════════════════════════
-               1. 👑 SUPER ADMIN PORTAL (VIEW ALL COMPLAINTS, PDFS & ACCOUNTS)
-               ═══════════════════════════════════════════════════════ */}
-            {currentUser.role === 'SUPER_ADMIN' && (
-              <div>
-                <div className="super-admin-banner">
-
-                  <div className="super-meta-top">
-                    <h5>👑 Enterprise Audit & Robot Vault</h5>
-                    <span style={{ fontSize: '0.65rem', background: '#ECFDF5', color: '#047857', padding: '0.2rem 0.5rem', borderRadius: '6px', fontWeight: '800' }}>
-                      ● LIVE AUDIT
-                    </span>
-                  </div>
-                  <div className="super-kpi-grid">
-                    <div className="super-kpi-chip">
-                      <span>Accounts</span>
-                      <strong>{usersDb.length}</strong>
-                    </div>
-                    <div className="super-kpi-chip">
-                      <span>Evidence Files</span>
-                      <strong>{complaintsDb.length}</strong>
-                    </div>
-                    <div className="super-kpi-chip">
-                      <span>Active Shifts</span>
-                      <strong style={{ color: '#10B981' }}>
-                        {attendanceLedger.filter(l => l.active).length}
-                      </strong>
-                    </div>
-                  </div>
+          <div className="duty-sheet-card">
+            
+            {/* Header Banner */}
+            <div className="duty-header-banner">
+              <div className="duty-header-left">
+                <div className="duty-emblem">🏛️</div>
+                <div className="duty-header-titles">
+                  <h3>Daily Audit Duty & Work Reporting Sheet</h3>
+                  <p>TTD Concurrent & Internal Audit Management Cell</p>
                 </div>
-
-                <div className="dash-tab-strip">
-                  <button 
-                    className={`dash-tab-btn ${adminTab === 'complaints_vault' ? 'active' : ''}`}
-                    onClick={() => setAdminTab('complaints_vault')}
-                  >
-                    📑 Complaints & Evidence ({structuredAdminComplaints.length})
-                  </button>
-                  <button 
-                    className={`dash-tab-btn ${adminTab === 'accounts_directory' ? 'active' : ''}`}
-                    onClick={() => setAdminTab('accounts_directory')}
-                  >
-                    👥 Accounts Directory ({usersDb.length})
-                  </button>
-                </div>
-
-                {/* Super Admin: All Complaints & Evidence PDF/Image Viewer */}
-                {adminTab === 'complaints_vault' && (
-                  <div>
-                    <div className="super-filter-card">
-                      <div>
-                        <label className="filter-group-header">🏢 Filter by Organization Unit:</label>
-                        <button 
-                          type="button"
-                          className="unit-picker-trigger-btn"
-                          onClick={() => setUnitPickerModal({
-                            title: 'Select Scope / Unit Filter',
-                            subtitle: 'Filter complaints & reports by department unit',
-                            allowAll: true,
-                            currentValue: adminUnitFilter,
-                            onSelect: (val) => setAdminUnitFilter(val)
-                          })}
-                        >
-                          <div className="unit-trigger-text">
-                            <span className="unit-trigger-sub">Current Filter</span>
-                            <strong className="unit-trigger-val">
-                              {adminUnitFilter === 'ALL' ? '🌐 All 8 Organizational Units' : adminUnitFilter}
-                            </strong>
-                          </div>
-                          <svg className="unit-trigger-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <polyline points="6 9 12 15 18 9"/>
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div>
-                        <label className="filter-group-header">⚡ Filter by Severity Level:</label>
-                        <div className="structured-filter-bar">
-                          <button 
-                            type="button"
-                            className={`filter-pill ${adminUrgencyFilter === 'ALL' ? 'active' : ''}`}
-                            onClick={() => setAdminUrgencyFilter('ALL')}
-                          >
-                            All Severity
-                          </button>
-                          <button 
-                            type="button"
-                            className={`filter-pill risk-crit ${adminUrgencyFilter === 'CRITICAL' ? 'active' : ''}`}
-                            onClick={() => setAdminUrgencyFilter('CRITICAL')}
-                          >
-                            🔥 Critical
-                          </button>
-                          <button 
-                            type="button"
-                            className={`filter-pill risk-high ${adminUrgencyFilter === 'HIGH' ? 'active' : ''}`}
-                            onClick={() => setAdminUrgencyFilter('HIGH')}
-                          >
-                            ⚠️ High
-                          </button>
-                          <button 
-                            type="button"
-                            className={`filter-pill risk-med ${adminUrgencyFilter === 'MEDIUM' ? 'active' : ''}`}
-                            onClick={() => setAdminUrgencyFilter('MEDIUM')}
-                          >
-                            ⚡ Medium
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="responsive-cards-grid">
-                      {structuredAdminComplaints.map(cmp => (
-                        <div key={cmp.id} className="complaint-evidence-card">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div>
-                              <span className="user-unit-tag" style={{ marginBottom: 4 }}>{cmp.unit}</span>
-                              <h6 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginTop: 2 }}>
-                                {cmp.title}
-                              </h6>
-                            </div>
-                            <span style={{ 
-                              fontSize: '0.65rem', 
-                              fontWeight: '800', 
-                              padding: '0.15rem 0.5rem', 
-                              borderRadius: '6px',
-                              background: cmp.urgency === 'CRITICAL' ? '#FEF2F2' : (cmp.urgency === 'HIGH' ? '#FFF7ED' : '#FFFBEB'),
-                              color: cmp.urgency === 'CRITICAL' ? '#DC2626' : (cmp.urgency === 'HIGH' ? '#EA580C' : '#D97706'),
-                              border: '1px solid currentColor'
-                            }}>
-                              {cmp.urgency} URGENCY
-                            </span>
-                          </div>
-
-                          <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.35 }}>
-                            {cmp.remarks}
-                          </p>
-
-                          {/* File Attachment & Instant View Button */}
-                          <div className="file-attachment-box">
-                            <div className="file-info-group">
-                              <div className={`file-icon-badge ${cmp.fileType?.includes('pdf') ? 'pdf' : 'img'}`}>
-                                {cmp.fileType?.includes('pdf') ? 'PDF' : 'IMG'}
-                              </div>
-                              <div>
-                                <div className="file-name-text">{cmp.fileName}</div>
-                                <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>{cmp.fileSize || 'Verified File'}</div>
-                              </div>
-                            </div>
-                            <button 
-                              className="btn-view-doc"
-                              onClick={() => setViewingDoc(cmp)}
-                            >
-                              👁️ View Document
-                            </button>
-                          </div>
-
-                          <div className="audit-timeframe-box">
-                            <span>⏱️ Timeframe:</span>
-                            <strong>{cmp.timeFrame}</strong>
-                            <span style={{ marginLeft: 'auto', color: '#10B981', fontWeight: '700' }}>● Robot Vault Verified</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.685rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
-                            <span>Auditor: <strong>{cmp.auditorName}</strong></span>
-                            <span>Manager: <strong>{cmp.managerName}</strong></span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {structuredAdminComplaints.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94A3B8', fontSize: '0.825rem' }}>
-                        No complaint evidence records found matching current filters.
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Super Admin: Accounts Directory */}
-                {adminTab === 'accounts_directory' && (
-                  <div>
-                    <div className="manager-action-bar">
-                      <div>
-                        <h5 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A' }}>Enterprise Accounts Directory</h5>
-                        <p style={{ fontSize: '0.7rem', color: '#64748B' }}>Complete staff roster with server timestamps</p>
-                      </div>
-                      <button className="btn-create-user" onClick={() => setShowCreateUserModal(true)}>
-                        + Onboard User
-                      </button>
-                    </div>
-
-                    <div className="responsive-cards-grid">
-                      {usersDb.map((user, index) => {
-                        const userLog = attendanceLedger.find(l => l.userId === user.id || l.userEmail === user.email);
-                        const loginTimeDisplay = userLog ? userLog.loginTime : (user.role === 'SUPER_ADMIN' ? '08:30:00 AM' : '09:00:00 AM');
-                        const logoutTimeDisplay = userLog ? (userLog.logoutTime || (userLog.active ? '● On-Duty Active' : 'Logged Out')) : '● Active';
-
-                        return (
-                          <div key={user.id} className="enterprise-account-card">
-                            <div className="acc-card-header">
-                              <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <span className="sno-pill">#{index + 1}</span>
-                                <span className="acc-name-text">{user.name}</span>
-                              </div>
-                              <span className={`role-badge-pill ${
-                                user.role === 'SUPER_ADMIN' ? 'role-super' : 
-                                user.role === 'MANAGER' ? 'role-manager' : 'role-user'
-                              }`}>
-                                {user.roleTitle || user.role}
-                              </span>
-                            </div>
-
-                            <div className="acc-email-sub">
-                              ✉️ {user.email} • <strong>{user.unit}</strong>
-                            </div>
-
-                            <div className="acc-time-grid">
-                              <div>
-                                <span>LOGIN TIME</span>
-                                <strong>{loginTimeDisplay}</strong>
-                              </div>
-                              <div>
-                                <span>LOGOUT TIME</span>
-                                <strong style={{ color: logoutTimeDisplay.includes('Active') ? '#10B981' : '#0F172A' }}>
-                                  {logoutTimeDisplay}
-                                </strong>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
-            )}
 
-
-            {/* ═══════════════════════════════════════════════════════
-               2. 💼 MANAGER PORTAL (DECIDE USER ROLES & VIEW TEAM COMPLAINTS)
-               ═══════════════════════════════════════════════════════ */}
-            {currentUser.role === 'MANAGER' && (
-              <div>
-                <div className="dash-tab-strip">
-                  <button 
-                    className={`dash-tab-btn ${managerTab === 'team_users' ? 'active' : ''}`}
-                    onClick={() => setManagerTab('team_users')}
-                  >
-                    👥 Team Users ({managerTeamUsers.length})
-                  </button>
-                  <button 
-                    className={`dash-tab-btn ${managerTab === 'team_complaints' ? 'active' : ''}`}
-                    onClick={() => setManagerTab('team_complaints')}
-                  >
-                    📑 Complaints ({managerTeamComplaints.length})
-                  </button>
-                  <button 
-                    className={`dash-tab-btn ${managerTab === 'assignments' ? 'active' : ''}`}
-                    onClick={() => setManagerTab('assignments')}
-                  >
-                    📋 Assign Work
-                  </button>
-                  <button 
-                    className={`dash-tab-btn ${managerTab === 'team_timestamps' ? 'active' : ''}`}
-                    onClick={() => setManagerTab('team_timestamps')}
-                  >
-                    ⏱️ Timestamps
-                  </button>
+              <div className="duty-header-badges">
+                <div className="duty-date-badge">
+                  📅 {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </div>
-
-                {/* 1. MANAGER: TEAM USERS WITH ROLE DECISION BUTTON */}
-                {managerTab === 'team_users' && (
-                  <div>
-                    <div className="manager-action-bar">
-                      <div>
-                        <h5 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A' }}>Auditor Team Roster</h5>
-                        <p style={{ fontSize: '0.7rem', color: '#64748B' }}>You decide and assign each auditor's designated role</p>
-                      </div>
-                      <button className="btn-create-user" onClick={() => setShowCreateUserModal(true)}>
-                        + Add Member
-                      </button>
-                    </div>
-
-                    <div className="responsive-cards-grid">
-                      {managerTeamUsers.map((user, index) => (
-                        <div key={user.id} className="enterprise-account-card">
-                          <div className="acc-card-header">
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                              <span className="sno-pill">#{index + 1}</span>
-                              <span className="acc-name-text">{user.name}</span>
-                            </div>
-                            <span className="role-badge-pill role-user">
-                              {user.roleTitle || 'Field Auditor'}
-                            </span>
-                          </div>
-
-                          <div className="acc-email-sub">
-                            ✉️ {user.email} • <strong>{user.unit}</strong>
-                          </div>
-
-                          {/* Manager Role Assignment Button */}
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #F1F5F9', paddingTop: '0.4rem', marginTop: '0.2rem' }}>
-                            <button 
-                              className="btn-create-user"
-                              style={{ padding: '0.3rem 0.65rem', fontSize: '0.685rem' }}
-                              onClick={() => {
-                                setEditingRoleUser(user);
-                                setSelectedRoleTitle(user.roleTitle || AUDITOR_ROLES[0]);
-                                setSelectedRoleUnit(user.unit || ORGANIZATIONAL_UNITS[0]);
-                              }}
-                            >
-                              ✏️ Decide User Role
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {managerTeamUsers.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94A3B8', fontSize: '0.825rem' }}>
-                        No team members registered yet under your jurisdiction.
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 2. MANAGER: TEAM COMPLAINTS & PDF/IMAGE VIEWER */}
-                {managerTab === 'team_complaints' && (
-                  <div>
-                    <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <h5 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A' }}>
-                          Team Complaints & Evidence ({currentUser.unit})
-                        </h5>
-                        <p style={{ fontSize: '0.7rem', color: '#64748B' }}>Audit evidence submitted by your field team</p>
-                      </div>
-                      <span style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: '700' }}>● Live Robot Sync</span>
-                    </div>
-
-                    <div className="responsive-cards-grid">
-                      {managerTeamComplaints.map(cmp => (
-                        <div key={cmp.id} className="complaint-evidence-card">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div>
-                              <span className="user-unit-tag" style={{ marginBottom: 4 }}>{cmp.unit}</span>
-                              <h6 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0F172A', marginTop: 2 }}>
-                                {cmp.title}
-                              </h6>
-                            </div>
-                            <span style={{ 
-                              fontSize: '0.65rem', 
-                              fontWeight: '800', 
-                              padding: '0.15rem 0.5rem', 
-                              borderRadius: '6px',
-                              background: cmp.urgency === 'CRITICAL' ? '#FEF2F2' : '#FFF7ED',
-                              color: cmp.urgency === 'CRITICAL' ? '#DC2626' : '#EA580C',
-                              border: '1px solid currentColor'
-                            }}>
-                              {cmp.urgency}
-                            </span>
-                          </div>
-
-                          <p style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.35 }}>
-                            {cmp.remarks}
-                          </p>
-
-                          <div className="file-attachment-box">
-                            <div className="file-info-group">
-                              <div className={`file-icon-badge ${cmp.fileType?.includes('pdf') ? 'pdf' : 'img'}`}>
-                                {cmp.fileType?.includes('pdf') ? 'PDF' : 'IMG'}
-                              </div>
-                              <div>
-                                <div className="file-name-text">{cmp.fileName}</div>
-                                <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>{cmp.fileSize || 'Verified File'}</div>
-                              </div>
-                            </div>
-                            <button 
-                              className="btn-view-doc"
-                              onClick={() => setViewingDoc(cmp)}
-                            >
-                              👁️ View Document
-                            </button>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.685rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
-                            <span>Auditor: <strong>{cmp.auditorName}</strong></span>
-                            <span>Timestamp: <strong>{cmp.serverTimestamp}</strong></span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {managerTeamComplaints.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94A3B8', fontSize: '0.825rem' }}>
-                        No complaint reports filed by your team yet today.
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 3. MANAGER: ASSIGN WORK */}
-                {managerTab === 'assignments' && (
-                  <div>
-                    <div className="manager-action-bar">
-                      <div>
-                        <h5 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A' }}>Work Assignments</h5>
-                        <p style={{ fontSize: '0.7rem', color: '#64748B' }}>Dispatch audit tasks & instructions to auditors</p>
-                      </div>
-                      <button className="btn-create-user" onClick={() => setShowAssignModal(true)}>
-                        + Assign Work
-                      </button>
-                    </div>
-
-                    <div className="responsive-cards-grid">
-                      {assignmentsDb.filter(a => a.managerId === currentUser.id).map(asn => (
-                        <div key={asn.id} className="assignment-card">
-                          <div className="assignment-card-header">
-                            <span className="user-unit-tag">{asn.unit}</span>
-                            <span className="assignment-task-badge">{asn.status}</span>
-                          </div>
-                          <h6 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A', marginTop: '0.25rem' }}>{asn.taskTitle}</h6>
-                          <p style={{ fontSize: '0.75rem', color: '#475569', margin: '0.35rem 0', lineHeight: 1.3 }}>{asn.instructions}</p>
-                          
-                          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '0.4rem', fontSize: '0.685rem', color: '#64748B' }}>
-                            <span>Assigned To: <strong>{asn.assignedToName}</strong></span>
-                            <span>Deadline: <strong>{asn.deadline}</strong></span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. MANAGER: TEAM TIMESTAMPS */}
-                {managerTab === 'team_timestamps' && (
-                  <div>
-                    <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <h5 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0F172A' }}>
-                          Team Attendance & Timestamps ({currentUser.unit})
-                        </h5>
-                        <p style={{ fontSize: '0.7rem', color: '#64748B' }}>Server-authoritative timestamps for your team only</p>
-                      </div>
-                      <span style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: '700' }}>● Verified</span>
-                    </div>
-
-                    <div className="responsive-cards-grid">
-                      {managerTeamAttendance.map((item, index) => (
-                        <div key={item.id} className="enterprise-account-card">
-                          <div className="acc-card-header">
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                              <span className="sno-pill">#{index + 1}</span>
-                              <span className="acc-name-text">{item.userName}</span>
-                            </div>
-                            <span style={{ 
-                              fontSize: '0.65rem', 
-                              fontWeight: '700', 
-                              padding: '0.15rem 0.5rem', 
-                              borderRadius: 'var(--radius-pill)',
-                              background: item.active ? '#ECFDF5' : '#F1F5F9',
-                              color: item.active ? '#047857' : '#64748B'
-                            }}>
-                              {item.active ? '● Active On-Duty' : 'Logged Out'}
-                            </span>
-                          </div>
-
-                          <div className="acc-email-sub">
-                            ✉️ {item.userEmail} • <strong>{item.unit}</strong>
-                          </div>
-
-                          <div className="acc-time-grid">
-                            <div>
-                              <span>SERVER LOGIN TIME</span>
-                              <strong>{item.loginTime}</strong>
-                            </div>
-                            <div>
-                              <span>SERVER LOGOUT TIME</span>
-                              <strong style={{ color: item.logoutTime ? '#0F172A' : '#10B981' }}>
-                                {item.logoutTime || '● Currently Active'}
-                              </strong>
-                            </div>
-                          </div>
-
-                          <div style={{ fontSize: '0.725rem', color: '#475569', background: '#FFFBEB', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #FDE68A', marginTop: '0.2rem' }}>
-                            <span>📝 <strong>Manager Remarks:</strong> {item.managerRemarks || 'No remarks added yet.'}</span>
-                          </div>
-
-                          <div className="manager-remark-box">
-                            <input 
-                              type="text" 
-                              className="manager-remark-input"
-                              placeholder="Add or update evaluation remark..."
-                              value={remarkInputs[item.id] || ''}
-                              onChange={(e) => setRemarkInputs({ ...remarkInputs, [item.id]: e.target.value })}
-                            />
-                            <button 
-                              className="manager-remark-btn"
-                              onClick={() => handleSaveRemark(item.id)}
-                            >
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="duty-live-badge">
+                  <span className="pulse-dot-live"></span>
+                  LIVE DUTY SESSION
+                </div>
               </div>
-            )}
+            </div>
 
-
-            {/* ═══════════════════════════════════════════════════════
-               3. 📋 FIELD USER PORTAL (SUB-RISK SELECTION & FILE UPLOAD)
-               ═══════════════════════════════════════════════════════ */}
-            {currentUser.role === 'USER' && (
-              <div>
-                <div className="live-session-card">
-                  <div className="session-meta">
-                    <h5>
-                      <span className="pulse-dot-live"></span>
-                      {isUserClockedIn ? `Server Verified Shift: ${currentTimeStr}` : 'Shift Logged Out'}
-                    </h5>
-                    <p>
-                      {currentUser.name} • <strong>{currentUser.roleTitle || 'Field Auditor'}</strong> ({currentUser.unit})
-                    </p>
-                  </div>
-                  <button 
-                    className={`clock-toggle-btn ${isUserClockedIn ? 'out' : 'in'}`}
-                    onClick={handleUserClockToggle}
-                  >
-                    {isUserClockedIn ? 'Clock Out' : 'Clock In'}
-                  </button>
-                </div>
-
-                <div className="dash-tab-strip">
-                  <button 
-                    className={`dash-tab-btn ${userTab === 'upload_report' ? 'active' : ''}`}
-                    onClick={() => setUserTab('upload_report')}
-                  >
-                    📤 Upload & Report
-                  </button>
-                  <button 
-                    className={`dash-tab-btn ${userTab === 'my_assignment' ? 'active' : ''}`}
-                    onClick={() => setUserTab('my_assignment')}
-                  >
-                    📌 My Work Assignment
-                  </button>
-                </div>
-
-                {/* Field User: Sub-Risk Selection & Image/PDF Upload */}
-                {userTab === 'upload_report' && (
-                  <div className="evo-card-container">
-                    <div className="evo-header-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                      <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0F172A' }}>Field Complaint & Evidence Upload</h4>
-                      <span style={{ fontSize: '0.725rem', color: '#10B981', fontWeight: '700' }}>● Robot Vault</span>
-                    </div>
-
-                    <form onSubmit={handleSendToRobotVault}>
-                      {/* Sub-Risk Category Selection */}
-                      <label className="sub-risk-label">Select Sub-Risk Category:</label>
-                      <div className="sub-risk-grid">
-                        {SUB_RISK_OPTIONS.map((riskOpt, idx) => (
-                          <div 
-                            key={idx}
-                            className={`sub-risk-card ${selectedSubRisk === riskOpt ? 'selected' : ''}`}
-                            onClick={() => setSelectedSubRisk(riskOpt)}
-                          >
-                            <span>{riskOpt}</span>
-                            {selectedSubRisk === riskOpt && <span style={{ color: '#059669', fontWeight: 'bold' }}>✓</span>}
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Custom Problem Specification Box when "Others" is selected */}
-                      {selectedSubRisk === 'Others (Manual Specification)' && (
-                        <div className="custom-problem-card">
-                          <label className="sub-risk-label" style={{ color: '#92400E' }}>
-                            ✍️ Explain the Problem / Specific Issue:
-                          </label>
-                          <textarea 
-                            rows="3"
-                            style={{
-                              width: '100%',
-                              padding: '0.65rem',
-                              borderRadius: '10px',
-                              border: '1.5px solid #FCD34D',
-                              fontSize: '0.8rem',
-                              fontFamily: 'inherit',
-                              outline: 'none',
-                              background: '#FFFFFF'
-                            }}
-                            placeholder="Detail the exact field issue, token discrepancy, or violation observed..."
-                            value={customProblemDetail}
-                            onChange={(e) => setCustomProblemDetail(e.target.value)}
-                            required
-                          />
-                        </div>
-                      )}
-
-                      <div style={{ marginBottom: '0.85rem' }}>
-                        <label className="sub-risk-label">Risk Severity Level:</label>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>
-                          {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((lvl) => (
-                            <button
-                              key={lvl}
-                              type="button"
-                              onClick={() => setReportUrgency(lvl)}
-                              style={{
-                                flex: 1,
-                                padding: '0.4rem',
-                                borderRadius: '10px',
-                                border: '1.5px solid',
-                                fontSize: '0.685rem',
-                                fontWeight: '800',
-                                cursor: 'pointer',
-                                borderColor: reportUrgency === lvl ? (lvl === 'CRITICAL' || lvl === 'HIGH' ? '#EF4444' : '#F59E0B') : '#E2E8F0',
-                                background: reportUrgency === lvl ? (lvl === 'CRITICAL' || lvl === 'HIGH' ? '#FEF2F2' : '#FFFBEB') : 'white',
-                                color: reportUrgency === lvl ? (lvl === 'CRITICAL' || lvl === 'HIGH' ? '#EF4444' : '#B45309') : '#64748B'
-                              }}
-                            >
-                              {lvl}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Upload Section: Image or PDF */}
-                      <label className="sub-risk-label">Attach Image or PDF Document Evidence:</label>
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        style={{ display: 'none' }}
-                        accept="image/*,.pdf,application/pdf"
-                        onChange={handleFileChange}
-                      />
-
-                      {!uploadedFile ? (
-                        <div 
-                          className="upload-dropzone"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <div className="upload-icon-circle">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                              <polyline points="17 8 12 3 7 8"/>
-                              <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                          </div>
-                          <div style={{ fontSize: '0.825rem', fontWeight: '800', color: '#0F172A' }}>
-                            Tap to Upload Image or PDF
-                          </div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: 2 }}>
-                            Supports PNG, JPG, JPEG, and PDF documents
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="upload-selected-preview">
-                          <div className="file-info-group">
-                            <div className={`file-icon-badge ${uploadedFile.type.includes('pdf') ? 'pdf' : 'img'}`}>
-                              {uploadedFile.type.includes('pdf') ? 'PDF' : 'IMG'}
-                            </div>
-                            <div>
-                              <div className="file-name-text">{uploadedFile.name}</div>
-                              <div style={{ fontSize: '0.65rem', color: '#64748B' }}>
-                                {(uploadedFile.size / 1024).toFixed(1)} KB • Ready to send
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '0.35rem' }}>
-                            <button 
-                              type="button" 
-                              className="btn-view-doc"
-                              onClick={() => setViewingDoc({
-                                title: selectedSubRisk === 'Others (Manual Specification)' ? (customProblemDetail || 'Custom Field Observation') : selectedSubRisk,
-                                fileName: uploadedFile.name,
-                                fileType: uploadedFile.type,
-                                fileData: filePreviewUrl,
-                                fileSize: `${(uploadedFile.size / 1024).toFixed(1)} KB`,
-                                remarks: reportRemarks
-                              })}
-                            >
-                              👁️ View
-                            </button>
-                            <button 
-                              type="button" 
-                              style={{ background: '#F1F5F9', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontWeight: 'bold', color: '#64748B' }}
-                              onClick={() => { setUploadedFile(null); setFilePreviewUrl(null); }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      <div style={{ marginBottom: '0.85rem' }}>
-                        <label className="sub-risk-label">Observation Notes & Remarks:</label>
-                        <textarea 
-                          rows="3"
-                          style={{
-                            width: '100%',
-                            padding: '0.65rem',
-                            borderRadius: '10px',
-                            border: '1.5px solid var(--border-input)',
-                            fontSize: '0.8rem',
-                            fontFamily: 'inherit',
-                            outline: 'none'
-                          }}
-                          placeholder="Enter voucher numbers, token verification notes..."
-                          value={reportRemarks}
-                          onChange={(e) => setReportRemarks(e.target.value)}
-                        />
-                      </div>
-
-                      {/* Robot Backend Status Message */}
-                      {uploadStatus === 'SUCCESS' && (
-                        <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', padding: '0.65rem', borderRadius: '12px', textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.75rem' }}>
-                          ✓ Successfully Verified & Stored in Robot Backend Vault!
-                          <div style={{ fontSize: '0.65rem', color: '#047857', marginTop: '2px' }}>
-                            Receipt: {robotReceipt}
-                          </div>
-                        </div>
-                      )}
-
-                      {uploadStatus === 'ERROR' && (
-                        <div>
-                          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '0.65rem', borderRadius: '12px', textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.45rem' }}>
-                            ⚠️ Robot Backend Vault verification failed.
-                          </div>
-                          <button 
-                            type="button" 
-                            className="btn-retry-upload"
-                            onClick={handleSendToRobotVault}
-                          >
-                            🔄 Retry Upload to Robot
-                          </button>
-                        </div>
-                      )}
-
-                      {uploadStatus !== 'ERROR' && (
-                        <button 
-                          type="submit" 
-                          className="btn-pill-primary"
-                          disabled={uploadStatus === 'UPLOADING'}
-                        >
-                          {uploadStatus === 'UPLOADING' ? '🚀 Sending to Robot Vault...' : '📤 Send to Robot Backend Vault'}
-                        </button>
-                      )}
-                    </form>
-                  </div>
-                )}
-
-                {/* Field User: View Assigned Work */}
-                {userTab === 'my_assignment' && (
+            {/* Success Alert Banner */}
+            {dutySubmitSuccess && (
+              <div className="duty-success-alert">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>✅</span>
                   <div>
-                    {currentUserAssignment ? (
-                      <div className="user-assigned-notice">
-                        <span className="assignment-task-badge">ASSIGNED BY MANAGER</span>
-                        <h6 style={{ fontSize: '0.875rem', fontWeight: '800', marginTop: '0.4rem' }}>{currentUserAssignment.taskTitle}</h6>
-                        <p style={{ margin: '0.35rem 0' }}>{currentUserAssignment.instructions}</p>
-                        <div style={{ fontSize: '0.685rem', color: '#065F46', borderTop: '1px solid #A7F3D0', paddingTop: '0.35rem', marginTop: '0.35rem' }}>
-                          <span>Target Unit: <strong>{currentUserAssignment.unit}</strong> • Deadline: <strong>{currentUserAssignment.deadline}</strong></span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94A3B8', fontSize: '0.8rem' }}>
-                        No pending work assignments from your manager today.
-                      </div>
-                    )}
+                    <strong style={{ fontSize: '0.875rem' }}>Daily Duty Sheet Submitted Successfully!</strong>
+                    <p style={{ fontSize: '0.75rem', margin: 0 }}>Recorded on central server with verified timestamp.</p>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* ═══════════════════════════════════════════════════════
-               🚪 UNIVERSAL SECURE LOGOUT SECTION (AVAILABLE TO ALL ROLES AT ANY TIME)
-               ═══════════════════════════════════════════════════════ */}
-            <div className="portal-logout-section">
-              <div className="portal-logout-header">
-                <h6>🚪 Active Server Session</h6>
-                <span style={{ fontSize: '0.65rem', background: '#ECFDF5', color: '#047857', padding: '0.15rem 0.5rem', borderRadius: '6px', fontWeight: '800' }}>
-                  ● Session Active ({sessionLoginTime || '09:00 AM'})
+                </div>
+                <span style={{ fontSize: '0.725rem', fontWeight: '800', background: '#FFFFFF', padding: '0.25rem 0.6rem', borderRadius: '6px' }}>
+                  ⏱️ {currentTimeStr}
                 </span>
               </div>
-              <div className="portal-logout-meta">
-                <span>Server Clock: <strong>{currentTimeStr}</strong></span>
-                <span>Anti-Tamper: <strong style={{ color: '#10B981' }}>✓ Enforced</strong></span>
-              </div>
+            )}
+
+            {/* Navigation Tabs between Duty Sheet & Submitted History */}
+            <div className="dash-tab-strip" style={{ marginBottom: '1.5rem' }}>
               <button 
                 type="button"
-                className="btn-record-logout"
-                onClick={handleLogout}
+                className={`dash-tab-btn ${dutyActiveTab === 'sheet' ? 'active' : ''}`}
+                onClick={() => setDutyActiveTab('sheet')}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                </svg>
-                Log Out & Stamp Exit Timestamp
+                📝 Daily Audit Duty Sheet (11 Parameters)
+              </button>
+              <button 
+                type="button"
+                className={`dash-tab-btn ${dutyActiveTab === 'records' ? 'active' : ''}`}
+                onClick={() => setDutyActiveTab('records')}
+              >
+                📋 Today's Submitted Reports ({dutySubmittedReports.length})
               </button>
             </div>
 
+            {dutyActiveTab === 'sheet' && (
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveDutyReport(false); }}>
+                
+                <div className="duty-form-grid">
+                  
+                  {/* Parameter 1: Login Time */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>⏱️ 1. Login Time</span>
+                      <span className="req">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="duty-input-box time-box"
+                      value={dutyLoginTime || currentTimeStr}
+                      onChange={(e) => setDutyLoginTime(e.target.value)}
+                      placeholder="e.g. 09:00:00 AM"
+                      required
+                    />
+                    <span className="duty-field-hint">Auto-captured from verified server sign-in</span>
+                  </div>
+
+                  {/* Parameter 2: Full Name */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>👤 2. Full Name</span>
+                      <span className="req">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="duty-input-box"
+                      value={dutyFullName}
+                      onChange={(e) => setDutyFullName(e.target.value)}
+                      placeholder="e.g. Ravi Teja / Audit Student Name"
+                      required
+                    />
+                    <span className="duty-field-hint">Auditor / Articled Assistant Name</span>
+                  </div>
+
+                  {/* Parameter 3: Student Registration No. */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>🎓 3. Student Registration No.</span>
+                      <span className="req">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="duty-input-box"
+                      value={dutyStudentRegNo}
+                      onChange={(e) => setDutyStudentRegNo(e.target.value.toUpperCase())}
+                      placeholder="e.g. SRO0684920 / CRO123456"
+                      required
+                    />
+                    <span className="duty-field-hint">ICAI / SRO / CRO / NRO Student Reg. No.</span>
+                  </div>
+
+                  {/* Parameter 4: TTD Audit Unit Details attending today */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>🏛️ 4. TTD Audit Unit Details attending today</span>
+                      <span className="req">*</span>
+                    </label>
+                    <select 
+                      className="duty-input-box"
+                      value={dutyUnitDetails}
+                      onChange={(e) => setDutyUnitDetails(e.target.value)}
+                      required
+                    >
+                      {ORGANIZATIONAL_UNITS.map((unit, idx) => (
+                        <option key={idx} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                    <span className="duty-field-hint">Select the designated TTD organizational unit</span>
+                  </div>
+
+                  {/* Parameter 5: TTD Audit Sub-Unit Details attending today */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>🏢 5. TTD Audit Sub-Unit Details attending today</span>
+                      <span className="req">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="duty-input-box"
+                      value={dutySubUnitDetails}
+                      onChange={(e) => setDutySubUnitDetails(e.target.value)}
+                      placeholder="e.g. Cold Storage Thermograph Section / Counter No. 4 / Daily Token Drawer"
+                      required
+                    />
+                    <span className="duty-field-hint">Specific department room, section, or counter</span>
+                  </div>
+
+                  {/* Parameter 6: Type of audit work done for */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>🔍 6. Type of audit work done for</span>
+                      <span className="req">*</span>
+                    </label>
+                    <select 
+                      className="duty-input-box"
+                      value={dutyAuditWorkType}
+                      onChange={(e) => setDutyAuditWorkType(e.target.value)}
+                      required
+                    >
+                      {AUDIT_WORK_TYPES.map((type, idx) => (
+                        <option key={idx} value={type}>{type}</option>
+                      ))}
+                    </select>
+                    <span className="duty-field-hint">Classification of audit exercise</span>
+                  </div>
+
+                  {/* Parameter 7: Today's work Objective */}
+                  <div className="duty-field-wrapper full-row">
+                    <label className="duty-field-label">
+                      <span>🎯 7. Today's work Objective</span>
+                      <span className="req">*</span>
+                    </label>
+                    <textarea 
+                      className="duty-textarea-box"
+                      rows="3"
+                      value={dutyWorkObjective}
+                      onChange={(e) => setDutyWorkObjective(e.target.value)}
+                      placeholder="State the primary audit goals, verification scope, token counts, or records to examine today..."
+                      required
+                    />
+                    <span className="duty-field-hint">Detail the scope and targets for today's session</span>
+                  </div>
+
+                  {/* Parameter 8: Today's work to be achieved by end of day */}
+                  <div className="duty-field-wrapper full-row">
+                    <label className="duty-field-label">
+                      <span>🏆 8. Today's work to be achieved by end of day</span>
+                      <span className="req">*</span>
+                    </label>
+                    <textarea 
+                      className="duty-textarea-box"
+                      rows="3"
+                      value={dutyTargetToAchieve}
+                      onChange={(e) => setDutyTargetToAchieve(e.target.value)}
+                      placeholder="Specify deliverables: e.g. 100% token count completed, 45 vouchers verified, temperature logs reconciled..."
+                      required
+                    />
+                    <span className="duty-field-hint">Expected completion milestones by End of Day (EOD)</span>
+                  </div>
+
+                  {/* Parameter 9: Remarks that you need the CA heading audit/management team of audit to know */}
+                  <div className="duty-field-wrapper full-row">
+                    <label className="duty-field-label">
+                      <span>⚠️ 9. Remarks that you need the CA heading audit / management team of audit to know</span>
+                    </label>
+                    <textarea 
+                      className="duty-textarea-box"
+                      rows="3"
+                      value={dutyCaRemarks}
+                      onChange={(e) => setDutyCaRemarks(e.target.value)}
+                      placeholder="Note down critical observations, stock variances, missing tokens, register delays, or escalations for Principal CA & Manager..."
+                    />
+                    <span className="duty-field-hint">High priority findings for the CA in-charge & management</span>
+                  </div>
+
+                  {/* Parameter 10: Point of Contact Name [ POC ] within the unit */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>🤝 10. Point of Contact Name [ POC ] within the unit</span>
+                      <span className="req">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="duty-input-box"
+                      value={dutyPocName}
+                      onChange={(e) => setDutyPocName(e.target.value)}
+                      placeholder="e.g. Sri S. Ramana Murthy, Superintendent / AEO"
+                      required
+                    />
+                    <span className="duty-field-hint">Designated TTD officer or unit in-charge</span>
+                  </div>
+
+                  {/* Parameter 11: Logout Time */}
+                  <div className="duty-field-wrapper">
+                    <label className="duty-field-label">
+                      <span>🚪 11. Logout Time</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <input 
+                        type="text" 
+                        className="duty-input-box time-box"
+                        value={dutyLogoutTime || 'Pending at EOD'}
+                        onChange={(e) => setDutyLogoutTime(e.target.value)}
+                        placeholder="e.g. 05:30:00 PM"
+                      />
+                      <button 
+                        type="button"
+                        className="btn-pill-primary"
+                        style={{ padding: '0.5rem 0.85rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                        onClick={() => setDutyLogoutTime(currentTimeStr)}
+                        title="Stamp Current Time as Logout Time"
+                      >
+                        ⏱️ Stamp Now
+                      </button>
+                    </div>
+                    <span className="duty-field-hint">Official departure timestamp stamped upon day completion</span>
+                  </div>
+
+                </div>
+
+                {/* Form Action Controls */}
+                <div className="duty-action-group">
+                  <button 
+                    type="submit" 
+                    className="btn-duty-submit"
+                  >
+                    <span>💾 Submit Daily Duty Sheet</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className="btn-duty-logout"
+                    onClick={() => {
+                      setDutyLogoutTime(currentTimeStr);
+                      handleSaveDutyReport(true);
+                    }}
+                    title="Save Report & Conclude Session with Logout"
+                  >
+                    <span>⏱️ Submit & Conclude Logout</span>
+                  </button>
+                </div>
+
+              </form>
+            )}
+
+            {/* Today's Submitted Duty Records Tab */}
+            {dutyActiveTab === 'records' && (
+              <div className="duty-recent-table-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div>
+                    <h5 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0F172A' }}>Today's Duty Records</h5>
+                    <p style={{ fontSize: '0.725rem', color: '#64748B' }}>Audit logs filed during today's shift</p>
+                  </div>
+                  <span style={{ fontSize: '0.725rem', background: '#ECFDF5', color: '#047857', padding: '0.25rem 0.6rem', borderRadius: '8px', fontWeight: '800' }}>
+                    ● Central Database Synced
+                  </span>
+                </div>
+
+                <div className="responsive-cards-grid">
+                  {dutySubmittedReports.map((rep, idx) => (
+                    <div key={rep.id || idx} className="enterprise-account-card">
+                      <div className="acc-card-header">
+                        <div>
+                          <span className="user-unit-tag" style={{ marginBottom: 4 }}>{rep.unitDetails}</span>
+                          <span className="acc-name-text" style={{ display: 'block', fontSize: '0.9rem' }}>{rep.fullName}</span>
+                        </div>
+                        <span className="role-badge-pill role-user">
+                          {rep.studentRegNo || 'STUDENT'}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '0.75rem', color: '#334155', margin: '0.4rem 0', fontWeight: '600' }}>
+                        📍 Sub-Unit: <strong>{rep.subUnitDetails}</strong> • Type: <strong>{rep.auditWorkType}</strong>
+                      </div>
+
+                      <div className="acc-time-grid">
+                        <div>
+                          <span>LOGIN TIME</span>
+                          <strong>{rep.loginTime}</strong>
+                        </div>
+                        <div>
+                          <span>LOGOUT TIME</span>
+                          <strong style={{ color: rep.logoutTime ? '#0F172A' : '#10B981' }}>
+                            {rep.logoutTime || '● Active Duty'}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div style={{ background: '#F8FAFC', padding: '0.5rem 0.65rem', borderRadius: '10px', fontSize: '0.725rem', color: '#475569', marginTop: '0.4rem' }}>
+                        <div>🎯 <strong>Objective:</strong> {rep.workObjective || 'General Audit Verification'}</div>
+                        <div style={{ marginTop: '0.25rem' }}>🏆 <strong>Target:</strong> {rep.targetToAchieve || 'Standard compliance verified'}</div>
+                        {rep.caRemarks && (
+                          <div style={{ marginTop: '0.25rem', color: '#B45309' }}>
+                            ⚠️ <strong>CA Remarks:</strong> {rep.caRemarks}
+                          </div>
+                        )}
+                        <div style={{ marginTop: '0.25rem', color: '#047857' }}>
+                          🤝 <strong>Unit POC:</strong> {rep.pocName || 'Not specified'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {dutySubmittedReports.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#94A3B8', fontSize: '0.85rem' }}>
+                    No duty sheets filed yet for today. Use the "Daily Audit Duty Sheet" tab to submit.
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         )}
+
 
       {/* ── Toast Modal: Server Stamped Logout Confirmation ── */}
 

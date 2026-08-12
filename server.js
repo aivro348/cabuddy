@@ -936,12 +936,66 @@ app.patch('/api/complaints/:id/status', async (req, res) => {
     if (c.id === id) return { ...c, status };
     return c;
   });
-
   saveDb(db);
-  res.json({ success: true, complaints: db.complaints });
+  res.json({ success: true, complaint: db.complaints.find(c => c.id === id) });
+});
+
+// ── Daily Audit Duty & Work Reports Endpoints ──
+
+app.get('/api/daily-reports', (req, res) => {
+  const db = loadDb();
+  res.json({ success: true, reports: db.dailyReports || [] });
+});
+
+app.post('/api/daily-reports', (req, res) => {
+  const {
+    userId,
+    loginTime,
+    fullName,
+    studentRegNo,
+    unitDetails,
+    subUnitDetails,
+    auditWorkType,
+    workObjective,
+    targetToAchieve,
+    caRemarks,
+    pocName,
+    logoutTime,
+    status
+  } = req.body;
+
+  const db = loadDb();
+  if (!db.dailyReports) db.dailyReports = [];
+
+  const { timeStr, dateStr } = getServerTimeDetails();
+
+  const newReport = {
+    id: `dr-${Date.now()}`,
+    userId: userId || null,
+    loginTime: loginTime || timeStr,
+    fullName: fullName || 'Audit Student',
+    studentRegNo: studentRegNo || '',
+    unitDetails: unitDetails || ORGANIZATIONAL_UNITS[0],
+    subUnitDetails: subUnitDetails || '',
+    auditWorkType: auditWorkType || 'Concurrent Audit',
+    workObjective: workObjective || '',
+    targetToAchieve: targetToAchieve || '',
+    caRemarks: caRemarks || '',
+    pocName: pocName || '',
+    logoutTime: logoutTime || null,
+    status: status || 'SUBMITTED',
+    date: dateStr,
+    createdAt: new Date().toISOString()
+  };
+
+  db.dailyReports.unshift(newReport);
+  saveDb(db);
+
+  res.json({ success: true, report: newReport, reports: db.dailyReports });
 });
 
 // ── Serve Built Frontend from Express (Solves 403 Forbidden on cPanel) ──
+
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
