@@ -569,32 +569,33 @@ export default function App() {
           </div>
 
           <div className="webapp-nav-controls">
-            <div className="live-clock-pill">
-              <span className="pulse-dot-live" style={{ marginRight: 2 }}></span>
-              <span>{currentTimeStr}</span>
+            <div className="nav-aux-group">
+              <div className="live-clock-pill">
+                <span className="pulse-dot-live"></span>
+                <span>{currentTimeStr}</span>
+              </div>
+
+              {/* PWA Install Button */}
+              <button 
+                type="button"
+                className="btn-pwa-install"
+                onClick={handleInstallClick}
+                title="Install CA Buddy as Desktop / Mobile App"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Install App</span>
+                {isPwaInstallable && (
+                  <span className="pulse-dot-live" style={{ background: '#FACC15', width: 6, height: 6, marginLeft: 2 }} />
+                )}
+              </button>
             </div>
 
-            {/* PWA Install Button */}
-            <button 
-              type="button"
-              className="btn-pwa-install"
-              onClick={handleInstallClick}
-              title="Install CA Buddy as Desktop / Mobile App"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              <span>Install App</span>
-              {isPwaInstallable && (
-                <span className="pulse-dot-live" style={{ background: '#FACC15', width: 6, height: 6, marginLeft: 2 }} />
-              )}
-            </button>
-
-
             {isLoggedIn && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div className="nav-user-auth-group">
                 <span className={`role-badge-pill ${
                   currentUser.role === 'SUPER_ADMIN' ? 'role-super' : 
                   currentUser.role === 'MANAGER' ? 'role-manager' : 'role-user'
@@ -616,6 +617,7 @@ export default function App() {
               </div>
             )}
           </div>
+
         </div>
       </header>
 
