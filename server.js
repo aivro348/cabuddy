@@ -84,7 +84,7 @@ const DEFAULT_DB = {
       id: 'usr-1', 
       name: 'Executive Super Admin', 
       email: 'admin@eluc', 
-      password: '1234567', 
+      password: 'admin', 
       role: 'SUPER_ADMIN', 
       roleTitle: 'Super Administrator', 
       studentRegNo: 'FCA108920',
@@ -429,6 +429,11 @@ app.post('/api/auth/login', async (req, res) => {
       };
       db.users.push(user);
     }
+  }
+
+  // Validate credentials
+  if (user && user.password !== password) {
+    return res.status(401).json({ success: false, message: 'Invalid password credentials' });
   }
 
   // Close previous active sessions for this user
