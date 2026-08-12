@@ -3,6 +3,11 @@ DirectoryIndex index.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+  
+  # Route /api/ requests to PHP api.php router
+  RewriteRule ^api/(.*)$ api.php [QSA,L]
+
+  # Route static React frontend routes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^ index.html [L]
