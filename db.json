@@ -177,6 +177,58 @@
   ],
   "attendance": [
     {
+      "id": "log-1786566783988",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "02:03:03 AM",
+      "logoutTime": null,
+      "date": "13 Aug 2026",
+      "timeWindow": "02:03:03 AM - Active",
+      "duration": "Session Active",
+      "active": true,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T20:33:03.983Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631589924531115,
+        "longitude": 79.4737243416575,
+        "accuracy": 114.30714851450777
+      }
+    },
+    {
+      "id": "log-1786566700233",
+      "userId": "usr-1",
+      "userName": "Executive Super Admin",
+      "userEmail": "admin@eluc",
+      "managerId": null,
+      "roleTitle": "Super Administrator",
+      "unit": "All Enterprise Units",
+      "loginTime": "02:01:40 AM",
+      "logoutTime": "02:02:57 AM",
+      "date": "13 Aug 2026",
+      "timeWindow": "02:01:40 AM - 02:02:57 AM",
+      "duration": "Session Completed",
+      "active": false,
+      "serverVerified": true,
+      "serverUtcIso": "2026-08-12T20:31:40.144Z",
+      "managerRemarks": "Super Administrator active in portal.",
+      "loginLocation": {
+        "latitude": 13.631973847689578,
+        "longitude": 79.47424827538616,
+        "accuracy": 76
+      },
+      "serverLogoutIso": "2026-08-12T20:32:57.549Z",
+      "logoutLocation": {
+        "latitude": 13.631584392128856,
+        "longitude": 79.47371679088818,
+        "accuracy": 114.30715205572206
+      }
+    },
+    {
       "id": "log-1786566319507",
       "userId": "usr-1",
       "userName": "Executive Super Admin",
@@ -185,11 +237,11 @@
       "roleTitle": "Super Administrator",
       "unit": "All Enterprise Units",
       "loginTime": "01:55:19 AM",
-      "logoutTime": null,
+      "logoutTime": "02:01:40 AM",
       "date": "13 Aug 2026",
       "timeWindow": "01:55:19 AM - Active",
-      "duration": "Session Active",
-      "active": true,
+      "duration": "Auto closed on new login",
+      "active": false,
       "serverVerified": true,
       "serverUtcIso": "2026-08-12T20:25:19.449Z",
       "managerRemarks": "Super Administrator active in portal.",
@@ -2242,6 +2294,25 @@
     }
   ],
   "dailyReports": [
+    {
+      "id": "dr-1786566777588",
+      "userId": "usr-1",
+      "loginTime": "02:01:40 AM",
+      "fullName": "Executive Super Admin",
+      "studentRegNo": "FCA108920",
+      "unitDetails": "All Enterprise Units",
+      "subUnitDetails": "Central Audit Apex Office",
+      "auditWorkType": "Concurrent Audit",
+      "workObjective": "Daily audit duty & physical verification",
+      "targetToAchieve": "Standard compliance verified",
+      "caRemarks": "",
+      "pocName": "Duty Officer",
+      "logoutTime": "02:02:57 AM",
+      "logoutRemarks": "Standard evening shift conclusion",
+      "status": "COMPLETED & VERIFIED",
+      "date": "13 Aug 2026",
+      "createdAt": "2026-08-12T20:32:57.589Z"
+    },
     {
       "id": "dr-1786555010284",
       "userId": "usr-1",

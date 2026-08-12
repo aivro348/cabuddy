@@ -121,14 +121,9 @@ body {
 .brand-emblem-mini {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #FEF08A 0%, #10B981 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0F172A;
-  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.2);
-  border: 1.5px solid #FFFFFF;
   flex-shrink: 0;
 }
 

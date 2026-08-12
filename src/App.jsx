@@ -754,8 +754,8 @@ export default function App() {
       <header className="webapp-navbar">
         <div className="webapp-navbar-inner">
           <div className="webapp-brand-left">
-            <div className="brand-emblem-mini" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: 'transparent' }}>
-              <img src="/calogo.png" alt="CA Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <div className="brand-emblem-mini">
+              <img src="/calogo.png" alt="CA Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div className="brand-name-group">
               <span className="brand-title">CA Buddy</span>
