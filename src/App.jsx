@@ -69,7 +69,7 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('admin@eluc');
   const [loginPassword, setLoginPassword] = useState('1234567');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedDemoRole, setSelectedDemoRole] = useState('SUPER_ADMIN');
+
 
   // Master State Stores
   const [usersDb, setUsersDb] = useState([]);
@@ -252,7 +252,6 @@ export default function App() {
 
   // Quick Demo Role Switcher
   const handleSelectDemoRole = (roleKey) => {
-    setSelectedDemoRole(roleKey);
     if (roleKey === 'SUPER_ADMIN') {
       setLoginEmail('admin@eluc');
       setLoginPassword('1234567');
@@ -272,8 +271,10 @@ export default function App() {
     let targetPwd = '1234567';
     if (roleKey === 'MANAGER') {
       targetEmail = 'manager@eluc';
+      targetPwd = '1234567';
     } else if (roleKey === 'USER') {
       targetEmail = 'auditor@eluc';
+      targetPwd = '1234567';
     }
     setLoginEmail(targetEmail);
     setLoginPassword(targetPwd);
@@ -290,17 +291,7 @@ export default function App() {
       if (data.success) {
         setCurrentUser(data.user);
         setIsLoggedIn(true);
-        setIsUserClockedIn(true);
         setSessionLoginTime(data.serverTimestamp);
-
-        if (data.user.role === 'SUPER_ADMIN') {
-          setAdminTab('complaints_vault');
-        } else if (data.user.role === 'MANAGER') {
-          setManagerTab('team_users');
-        } else {
-          setUserTab('upload_report');
-        }
-
         refreshAllData();
       }
     } catch (err) {
@@ -323,23 +314,14 @@ export default function App() {
       if (data.success) {
         setCurrentUser(data.user);
         setIsLoggedIn(true);
-        setIsUserClockedIn(true);
         setSessionLoginTime(data.serverTimestamp);
-
-        if (data.user.role === 'SUPER_ADMIN') {
-          setAdminTab('complaints_vault');
-        } else if (data.user.role === 'MANAGER') {
-          setManagerTab('team_users');
-        } else {
-          setUserTab('upload_report');
-        }
-
         refreshAllData();
       }
     } catch (err) {
       console.error('Login error:', err);
     }
   };
+
 
   // 2. Backend Logout (Records Server Authoritative Exit Timestamp for ALL Roles at Any Time)
   const handleLogout = async () => {
@@ -646,30 +628,6 @@ export default function App() {
                ── SIGN IN SCREEN (CENTERED WEB APP CARD) ──
                ═══════════════════════════════════════════════════════ */
             <div className="webapp-auth-center">
-              <div className="role-demo-bar">
-                <button 
-                  type="button"
-                  className={`role-demo-chip ${selectedDemoRole === 'SUPER_ADMIN' ? 'active' : ''}`}
-                  onClick={() => handleSelectDemoRole('SUPER_ADMIN')}
-                >
-                  👑 Super Admin
-                </button>
-                <button 
-                  type="button"
-                  className={`role-demo-chip ${selectedDemoRole === 'MANAGER' ? 'active' : ''}`}
-                  onClick={() => handleSelectDemoRole('MANAGER')}
-                >
-                  💼 Manager
-                </button>
-                <button 
-                  type="button"
-                  className={`role-demo-chip ${selectedDemoRole === 'USER' ? 'active' : ''}`}
-                  onClick={() => handleSelectDemoRole('USER')}
-                >
-                  📋 Field User
-                </button>
-              </div>
-
               <div className="brand-top-header">
                 <div className="brand-emblem-badge">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -680,6 +638,7 @@ export default function App() {
                 <div className="brand-company-title">CA Buddy</div>
                 <div className="brand-company-tagline">Centralized Multi-Role Audit & Robot Vault</div>
               </div>
+
 
               <h1 className="auth-title">Sign In</h1>
 
