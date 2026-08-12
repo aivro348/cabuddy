@@ -35,10 +35,11 @@ $dbHost = isset($env['DB_HOST']) ? $env['DB_HOST'] : 'localhost';
 $dbName = isset($env['DB_NAME']) ? $env['DB_NAME'] : '';
 $dbUser = isset($env['DB_USER']) ? $env['DB_USER'] : '';
 $dbPass = isset($env['DB_PASSWORD']) ? $env['DB_PASSWORD'] : '';
+$dbPort = isset($env['DB_PORT']) ? $env['DB_PORT'] : '3306';
 
 // 2. Establish PDO MySQL Connection
 try {
-    $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName;charset=utf8mb4", $dbUser, $dbPass, [
+    $pdo = new PDO("mysql:host=$dbHost;port=$dbPort;dbname=$dbName;charset=utf8mb4", $dbUser, $dbPass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
